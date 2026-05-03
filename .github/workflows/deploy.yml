@@ -29,8 +29,6 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          # Si vous avez une URL d'API externe (ex: Cloud Run), 
-          # ajoutez-la dans les "Secrets" de votre repo GitHub sous le nom VITE_API_URL
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
       - name: Upload artifact
