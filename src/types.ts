@@ -60,6 +60,16 @@ export interface AnalysisResult {
     bestPostTime?: string;
     audienceInterests?: string[];
     audienceLoyalty?: number;
+    audit?: {
+      hasLink: boolean;
+      hasAvatar: boolean;
+      hasKeywords: boolean;
+      grades: {
+        virality: string;
+        community: string;
+        growth: string;
+      };
+    };
   };
   insights: string[];
 }

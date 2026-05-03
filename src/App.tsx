@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
-import { Search, Loader2, TrendingUp, Users, Heart, Video, AlertCircle, Info, Download, ExternalLink, MessageCircle, Share2, Calendar, MapPin, Hash, Clock, Swords, Trash2, Activity, Star, Zap, Euro } from 'lucide-react';
+import { Search, Loader2, TrendingUp, Users, Heart, Video, AlertCircle, Info, Download, ExternalLink, MessageCircle, Share2, Calendar, MapPin, Hash, Clock, Swords, Trash2, Activity, Star, Zap, Euro, Check, CheckCircle, X, AlertTriangle, Award } from 'lucide-react';
 
 import { motion, AnimatePresence } from 'motion/react';
 import { AnalysisResult } from './types';
@@ -235,7 +235,7 @@ export default function App() {
       const imgWidth = 210;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
       const fileName = `MediaKit_${result.data.username}.pdf`;
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       
@@ -780,6 +780,89 @@ export default function App() {
                   </button>
                 </div>
               </div>
+
+              {/* Audit & Notes Section */}
+              {result.data.audit && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                  
+                  {/* Notes de Performance */}
+                  <div className="bg-slate-900 rounded-[40px] p-8 shadow-lg text-white">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-6 flex items-center gap-2">
+                       <Award size={16} className="text-amber-400" />
+                       Notes de Performance
+                    </h3>
+                    <div className="space-y-4">
+                       <div className="flex items-center justify-between bg-white/5 p-4 rounded-3xl">
+                          <div>
+                            <p className="text-xs font-bold text-slate-300">Note de Viralité</p>
+                            <p className="text-[10px] text-slate-500 italic">Basée sur les partages</p>
+                          </div>
+                          <div className={`w-12 h-12 flex items-center justify-center rounded-2xl text-2xl font-black ${['S', 'A'].includes(result.data.audit.grades.virality) ? 'bg-emerald-500/20 text-emerald-400' : ['B', 'C'].includes(result.data.audit.grades.virality) ? 'bg-amber-500/20 text-amber-400' : 'bg-red-500/20 text-red-400'}`}>
+                            {result.data.audit.grades.virality}
+                          </div>
+                       </div>
+                       <div className="flex items-center justify-between bg-white/5 p-4 rounded-3xl">
+                          <div>
+                            <p className="text-xs font-bold text-slate-300">Note de Communauté</p>
+                            <p className="text-[10px] text-slate-500 italic">Basée sur les commentaires</p>
+                          </div>
+                          <div className={`w-12 h-12 flex items-center justify-center rounded-2xl text-2xl font-black ${['S', 'A'].includes(result.data.audit.grades.community) ? 'bg-emerald-500/20 text-emerald-400' : ['B', 'C'].includes(result.data.audit.grades.community) ? 'bg-amber-500/20 text-amber-400' : 'bg-red-500/20 text-red-400'}`}>
+                            {result.data.audit.grades.community}
+                          </div>
+                       </div>
+                       <div className="flex items-center justify-between bg-white/5 p-4 rounded-3xl">
+                          <div>
+                            <p className="text-xs font-bold text-slate-300">Note de Croissance</p>
+                            <p className="text-[10px] text-slate-500 italic">Comparaison hebdo. des vues</p>
+                          </div>
+                          <div className={`w-12 h-12 flex items-center justify-center rounded-2xl text-2xl font-black ${['S', 'A'].includes(result.data.audit.grades.growth) ? 'bg-emerald-500/20 text-emerald-400' : ['B', 'C'].includes(result.data.audit.grades.growth) ? 'bg-amber-500/20 text-amber-400' : 'bg-red-500/20 text-red-400'}`}>
+                            {result.data.audit.grades.growth}
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+
+                  {/* Audit de la Bio et du Profil */}
+                  <div className="bg-white border border-slate-100 rounded-[40px] p-8 shadow-sm">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
+                       <CheckCircle size={16} className="text-indigo-500" />
+                       Audit de la Bio et du Profil
+                    </h3>
+                    <div className="space-y-4">
+                       <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-3xl">
+                          <div className={`p-2 rounded-xl border ${result.data.audit.hasLink ? 'bg-emerald-100 border-emerald-200 text-emerald-600' : 'bg-red-100 border-red-200 text-red-600'}`}>
+                             {result.data.audit.hasLink ? <Check size={18} /> : <X size={18} />}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-900">Lien dans la bio</p>
+                            <p className="text-xs text-slate-500">{result.data.audit.hasLink ? 'Présent' : 'Recommandé pour rediriger le trafic'}</p>
+                          </div>
+                       </div>
+                       
+                       <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-3xl">
+                          <div className={`p-2 rounded-xl border ${result.data.audit.hasAvatar ? 'bg-emerald-100 border-emerald-200 text-emerald-600' : 'bg-red-100 border-red-200 text-red-600'}`}>
+                             {result.data.audit.hasAvatar ? <Check size={18} /> : <X size={18} />}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-900">Photo de profil</p>
+                            <p className="text-xs text-slate-500">{result.data.audit.hasAvatar ? 'Présente' : 'Indispensable pour l\'identité visuelle'}</p>
+                          </div>
+                       </div>
+                       
+                       <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-3xl">
+                          <div className={`p-2 rounded-xl border ${result.data.audit.hasKeywords ? 'bg-emerald-100 border-emerald-200 text-emerald-600' : 'bg-amber-100 border-amber-200 text-amber-600'}`}>
+                             {result.data.audit.hasKeywords ? <Check size={18} /> : <AlertTriangle size={18} />}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-900">Mots-clés clairs</p>
+                            <p className="text-xs text-slate-500">{result.data.audit.hasKeywords ? 'La bio semble détaillée' : 'Ajoutez des mots-clés sur votre niche'}</p>
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+
+                </div>
+              )}
 
               {/* Virality & Revenue Section */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">

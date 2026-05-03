@@ -28,7 +28,30 @@ export interface AnalysisResultData {
   viralityScore: number;
   audienceInterests: string[];
   audienceLoyalty: number;
+  audit?: {
+    hasLink: boolean;
+    hasAvatar: boolean;
+    hasKeywords: boolean;
+    grades: {
+      virality: string;
+      community: string;
+      growth: string;
+    };
+  };
 }
+
+const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs = 6000) => {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(id);
+    return response;
+  } catch (err) {
+    clearTimeout(id);
+    throw err;
+  }
+};
 
 export const analyzeTikTokProfile = async (username: string, isDemo: boolean = false): Promise<{ data: AnalysisResultData; source: string; quota?: { limit: number; remaining: number; key: string; reset?: number } }> => {
   const cleanUsername = username.replace('@', '');
@@ -59,7 +82,7 @@ export const analyzeTikTokProfile = async (username: string, isDemo: boolean = f
         ];
 
         for (const endpoint of apiEndpoints) {
-          const response = await fetch(endpoint.url, {
+          const response = await fetchWithTimeout(endpoint.url, {
             method: 'GET',
             headers: {
               'x-rapidapi-key': currentKey,
@@ -105,7 +128,7 @@ export const analyzeTikTokProfile = async (username: string, isDemo: boolean = f
 
               if (secUid) {
                 try {
-                  const postsRes = await fetch(endpoint.postsUrl(secUid), {
+                  const postsRes = await fetchWithTimeout(endpoint.postsUrl(secUid), {
                     method: 'GET',
                     headers: {
                       'x-rapidapi-key': currentKey,
@@ -347,6 +370,52 @@ export const analyzeTikTokProfile = async (username: string, isDemo: boolean = f
     const d = new Date(best.createTime);
     const days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
     profileData.bestPostTime = `${days[d.getDay()]} à ${d.getHours()}h`;
+  }
+
+  if (!profileData.audit) {
+    const bioStr = profileData.profile.bio || '';
+    const avatarStr = profileData.profile.avatar || '';
+    
+    const hasLink = /http|www\.|\.com|\.fr|\.be|\.ch|\.ca|linktr\.ee|snipfeed|beacons\.ai/i.test(bioStr);
+    const hasAvatar = avatarStr.length > 0 && !avatarStr.includes('ui-avatars');
+    const hasKeywords = bioStr.length > 15 && bioStr.split(' ').length >= 3;
+    
+    const getGrade = (value: number, thresholds: number[]) => {
+      if (value >= thresholds[0]) return 'S';
+      if (value >= thresholds[1]) return 'A';
+      if (value >= thresholds[2]) return 'B';
+      if (value >= thresholds[3]) return 'C';
+      if (value >= thresholds[4]) return 'D';
+      return 'F';
+    };
+
+    const sRate = profileData.shareRate || 0;
+    const cRate = profileData.commentRate || 0;
+    const viralityGrade = getGrade(sRate, [5, 3, 1.5, 0.5, 0.1]);
+    const communityGrade = getGrade(cRate, [3, 1.5, 0.8, 0.3, 0.1]);
+
+    let growthGrade = 'C';
+    if (profileData.videos && profileData.videos.length >= 4) {
+      const sorted = [...profileData.videos].sort((a:any, b:any) => b.createTime - a.createTime);
+      const half = Math.floor(sorted.length / 2);
+      const recentViews = sorted.slice(0, half).reduce((sum: number, v: any) => sum + v.views, 0) / half;
+      const olderViews = sorted.slice(half).reduce((sum: number, v: any) => sum + v.views, 0) / (sorted.length - half);
+      const ratio = olderViews > 0 ? recentViews / olderViews : 1;
+      growthGrade = getGrade(ratio, [2, 1.5, 1.1, 0.9, 0.5]);
+    } else {
+      growthGrade = getGrade(profileData.stats.engagementRate || 0, [10, 8, 5, 3, 1]);
+    }
+
+    profileData.audit = {
+      hasLink,
+      hasAvatar,
+      hasKeywords,
+      grades: {
+        virality: viralityGrade,
+        community: communityGrade,
+        growth: growthGrade
+      }
+    };
   }
 
   return { data: profileData, source, quota: quotaInfo };
