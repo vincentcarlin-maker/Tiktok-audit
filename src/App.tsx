@@ -209,7 +209,6 @@ export default function App() {
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
-        allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
         width: 800, // Matching the w-[800px] class
@@ -226,11 +225,12 @@ export default function App() {
             container.style.display = 'block';
             container.style.width = '800px';
             container.style.margin = '0';
+            container.style.padding = '48px';
           }
         }
       });
       
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
       const pdf = new jsPDF('p', 'mm', 'a4');
       const imgWidth = 210;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
@@ -239,20 +239,28 @@ export default function App() {
       const fileName = `MediaKit_${result.data.username}.pdf`;
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       
-      if (isIOS) {
-        // Special handling for iOS Safari - create a temporary link and trigger it
+    if (isIOS) {
+        // Special handling for iOS Safari - creating a blob and using URL.createObjectURL
         const blob = pdf.output('blob');
         const url = URL.createObjectURL(blob);
+        
+        // Create an invisible link and click it
         const link = document.createElement('a');
         link.href = url;
         link.target = '_blank';
+        link.download = fileName; // Try to force download
+        document.body.appendChild(link);
         link.click();
-        // Fallback if click doesn't work in some iframe contexts
+        document.body.removeChild(link);
+        
+        // Fallback for some browsers/iframes
         setTimeout(() => {
-          if (window.confirm("Ouvrir le PDF ?")) {
-            window.location.href = url;
+          if (window.confirm("Le téléchargement n'a pas démarré ? Cliquez OK pour ouvrir le PDF dans un nouvel onglet.")) {
+            window.open(url, '_blank');
           }
-        }, 100);
+          // Clean up URL object after some time
+          setTimeout(() => URL.revokeObjectURL(url), 60000);
+        }, 1500);
       } else {
         pdf.save(fileName);
       }
@@ -280,11 +288,10 @@ export default function App() {
     setIsExportingPDF(true);
     try {
       // Force a fixed width for capture to prevent responsive alignment issues
-      const captureWidth = 1280; 
+      const captureWidth = 1200; 
       const canvas = await html2canvas(element, { 
-        scale: 2, 
+        scale: 1.5, // Reduced scale slightly for better performance on large audits
         useCORS: true, 
-        allowTaint: true,
         backgroundColor: '#f8fafc',
         logging: false,
         width: captureWidth,
@@ -295,10 +302,11 @@ export default function App() {
           if (dashboard) {
             dashboard.style.width = `${captureWidth}px`;
             dashboard.style.maxWidth = 'none';
+            dashboard.style.margin = '0';
           }
         }
       });
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
@@ -323,18 +331,22 @@ export default function App() {
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       
       if (isIOS) {
-        // Special handling for iOS Safari
         const blob = pdf.output('blob');
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
         link.target = '_blank';
+        link.download = fileName;
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
+        
         setTimeout(() => {
-          if (window.confirm("Ouvrir l'audit PDF ?")) {
-            window.location.href = url;
+          if (window.confirm("Ouvrir l'audit PDF dans un nouvel onglet ?")) {
+            window.open(url, '_blank');
           }
-        }, 100);
+          setTimeout(() => URL.revokeObjectURL(url), 60000);
+        }, 1500);
       } else {
         pdf.save(fileName);
       }
