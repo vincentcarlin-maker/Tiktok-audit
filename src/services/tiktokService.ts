@@ -443,8 +443,23 @@ export const analyzeTikTokProfile = async (username: string, isDemo: boolean = f
     };
 
     // Benchmark generation
-    const nicheList = ["Lifestyle & Vlog", "Humour & Divertissement", "Beauté & Mode", "Business & Finance", "Gaming", "Éducation & Info"];
-    const detectedNiche = profileData.profile.category || nicheList[Math.floor(Math.random() * nicheList.length)];
+    const nicheList = ["Lifestyle & Vlog", "Humour & Divertissement", "Beauté & Mode", "Business & Finance", "Gaming", "Éducation & Info", "Fitness & Santé"];
+    
+    // Simple detection based on bio and hashtags
+    const bioAndHashtags = (profileData.profile.bio + (profileData.topHashtags?.map((t:any) => t.tag).join(' ') || '')).toLowerCase();
+    
+    let detectedNiche = profileData.profile.category;
+    if (!detectedNiche) {
+        if (bioAndHashtags.includes('fitness') || bioAndHashtags.includes('sport') || bioAndHashtags.includes('musculation') || bioAndHashtags.includes('workout')) {
+            detectedNiche = "Fitness & Santé";
+        } else if (bioAndHashtags.includes('humour') || bioAndHashtags.includes('funny') || bioAndHashtags.includes('drole')) {
+            detectedNiche = "Humour & Divertissement";
+        } else if (bioAndHashtags.includes('beauté') || bioAndHashtags.includes('fashion') || bioAndHashtags.includes('mode')) {
+            detectedNiche = "Beauté & Mode";
+        } else {
+            detectedNiche = nicheList[Math.floor(Math.random() * nicheList.length)];
+        }
+    }
     
     const avgViews = Math.floor((profileData.stats.avgViews || 1000) * (0.8 + Math.random() * 0.4));
     const avgEngagement = Math.max(0.5, (profileData.stats.engagementRate || 5) * (0.8 + Math.random() * 0.4));
