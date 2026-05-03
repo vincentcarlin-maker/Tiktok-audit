@@ -359,9 +359,9 @@ export default function App() {
     try {
       const { data, quota, source } = await analyzeTikTokProfile(username, false);
       setResult({ data, source, insights: [] } as any);
-      if (quota) {
+      if (quota && (quota as any).key) {
         setKeysStatus(prev => {
-          const filtered = prev.filter(k => k.key !== quota.key);
+          const filtered = prev.filter(k => k.key !== (quota as any).key);
           return [{ ...quota, lastUsed: Date.now() }, ...filtered].slice(0, 5);
         });
       }
@@ -1272,7 +1272,7 @@ export default function App() {
                     <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full -translate-y-12 translate-x-12"></div>
                     <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-6">Tendances & Audience</h3>
                     <div className="flex flex-wrap gap-2 mb-6">
-                       {result.data.topHashtags.slice(0, 5).map((t: any) => (
+                       {result.data.topHashtags?.slice(0, 5).map((t: any) => (
                          <span key={t.tag} className="px-3 py-2 bg-white border border-indigo-100 rounded-xl text-xs font-bold text-indigo-700 shadow-sm">
                            #{t.tag}
                          </span>
@@ -1290,7 +1290,7 @@ export default function App() {
                     </div>
                     <div>
                        <p className="text-[9px] font-black text-indigo-400 uppercase mb-2">Score de Viralité</p>
-                       <div className="text-3xl font-black text-indigo-900">{result.data.viralityScore} / 100</div>
+                       <div className="text-3xl font-black text-indigo-900">{result.data.viralityScore || 0} / 100</div>
                     </div>
                  </div>
               </div>
@@ -1300,9 +1300,9 @@ export default function App() {
                    <p className="text-[10px] font-black uppercase tracking-widest opacity-50">Derniers Contenus</p>
                 </div>
                 <div className="grid grid-cols-5 gap-3">
-                   {result.data.videos.slice(0, 5).map((v: any) => (
+                   {result.data.videos?.slice(0, 5).map((v: any) => (
                      <div key={v.id} className="aspect-[9/16] rounded-xl overflow-hidden relative border border-white/5">
-                       <img src={v.cover} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+                       {v.cover && <img src={v.cover} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />}
                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-2">
                          <span className="text-[10px] font-black text-white">{formatNumber(v.views)}</span>
                        </div>

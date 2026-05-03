@@ -1,5 +1,5 @@
 
-export interface AnalysisResult {
+export interface AnalysisResultData {
   username: string;
   stats: {
     followers: number;
@@ -20,6 +20,7 @@ export interface AnalysisResult {
   commentRate: number;
   postFrequency: string;
   topHashtags: any[];
+  dominantKeywords?: any[];
   estimatedRevenue: number;
   brandDealRevenue: number;
   bestPostTime: string;
@@ -29,11 +30,11 @@ export interface AnalysisResult {
   audienceLoyalty: number;
 }
 
-export const analyzeTikTokProfile = async (username: string, isDemo: boolean = false): Promise<{ data: AnalysisResult; source: string; quota?: { limit: number; remaining: number; reset?: number } }> => {
+export const analyzeTikTokProfile = async (username: string, isDemo: boolean = false): Promise<{ data: AnalysisResultData; source: string; quota?: { limit: number; remaining: number; key: string; reset?: number } }> => {
   const cleanUsername = username.replace('@', '');
   
   // Use VITE_ prefix for keys in frontend
-  const rawKeys = import.meta.env.VITE_RAPIDAPI_KEY || 'b3b8244ea2msh4e2b733bb238abdp116a59jsn2bb022c66151';
+  const rawKeys = ((import.meta as any).env.VITE_RAPIDAPI_KEY) || 'b3b8244ea2msh4e2b733bb238abdp116a59jsn2bb022c66151';
   const rapidApiKeys = rawKeys.split(',').map((k: string) => k.trim()).filter((k: string) => k.length > 0);
   
   let profileData: any = null;
@@ -69,13 +70,12 @@ export const analyzeTikTokProfile = async (username: string, isDemo: boolean = f
           // Extract quota headers
           const remaining = response.headers.get('x-ratelimit-requests-remaining');
           const limit = response.headers.get('x-ratelimit-requests-limit');
-          if (remaining && limit) {
-             quotaInfo = { 
-               remaining: parseInt(remaining), 
-               limit: parseInt(limit),
-               key: currentKey.slice(0, 4) + '...' + currentKey.slice(-4)
-             };
-          }
+          
+          quotaInfo = { 
+            remaining: remaining ? parseInt(remaining) : 100, 
+            limit: limit ? parseInt(limit) : 100,
+            key: currentKey.slice(0, 4) + '...' + currentKey.slice(-4)
+          };
 
           if (response.ok) {
             const data = await response.json();
