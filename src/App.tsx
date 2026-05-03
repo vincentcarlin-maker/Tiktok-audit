@@ -77,6 +77,7 @@ export default function App() {
   const [view, setView] = useState<'analytics'>('analytics');
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
+  const API_BASE = import.meta.env.VITE_API_URL || '';
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'recent' | 'views' | 'likes' | 'comments'>('recent');
@@ -89,7 +90,7 @@ export default function App() {
 
   const fetchKeysStatus = async () => {
     try {
-      const response = await fetch('/api/keys-status');
+      const response = await fetch(`${API_BASE}/api/keys-status`);
       if (response.ok) {
         const data = await response.json();
         setKeysStatus(data);
@@ -353,7 +354,7 @@ export default function App() {
     setError(null);
 
     try {
-      const response = await fetch('/api/analyze', {
+      const response = await fetch(`${API_BASE}/api/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, demo: false }) 
