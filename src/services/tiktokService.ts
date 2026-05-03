@@ -406,6 +406,26 @@ export const analyzeTikTokProfile = async (username: string, isDemo: boolean = f
       growthGrade = getGrade(profileData.stats.engagementRate || 0, [10, 8, 5, 3, 1]);
     }
 
+    const estimatedWatchTime = Math.min(92, Math.max(12, Math.round(25 + ((profileData.stats.engagementRate || 0) * 2.5) + ((profileData.shareRate || 0) * 4))));
+    
+    let dropOffPoint = "";
+    if (estimatedWatchTime < 35) {
+      dropOffPoint = "1-2 secondes (Swipe rapide) ⚠️";
+    } else if (estimatedWatchTime < 55) {
+      dropOffPoint = "3-5 secondes (Perte d'intérêt)";
+    } else {
+      dropOffPoint = "Au-delà de 8 secondes 🔥";
+    }
+
+    let viralComparison = "";
+    if (estimatedWatchTime < 45) {
+      viralComparison = "Inférieur à la moyenne virale (70%+)";
+    } else if (estimatedWatchTime < 65) {
+      viralComparison = "Proche de la moyenne des vidéos virales";
+    } else {
+      viralComparison = "Excellente rétention (Top 1% viral) 🚀";
+    }
+
     profileData.audit = {
       hasLink,
       hasAvatar,
@@ -414,7 +434,94 @@ export const analyzeTikTokProfile = async (username: string, isDemo: boolean = f
         virality: viralityGrade,
         community: communityGrade,
         growth: growthGrade
+      },
+      retention: {
+        estimatedWatchTime,
+        dropOffPoint,
+        viralComparison
       }
+    };
+
+    // Benchmark generation
+    const nicheList = ["Lifestyle & Vlog", "Humour & Divertissement", "Beauté & Mode", "Business & Finance", "Gaming", "Éducation & Info"];
+    const detectedNiche = profileData.profile.category || nicheList[Math.floor(Math.random() * nicheList.length)];
+    
+    const avgViews = Math.floor((profileData.stats.avgViews || 1000) * (0.8 + Math.random() * 0.4));
+    const avgEngagement = Math.max(0.5, (profileData.stats.engagementRate || 5) * (0.8 + Math.random() * 0.4));
+    
+    let strengths = [];
+    let weaknesses = [];
+    
+    if ((profileData.stats.engagementRate || 0) > avgEngagement) {
+      strengths.push("Meilleur taux d'engagement que la moyenne");
+    } else {
+      weaknesses.push("Taux d'engagement sous la moyenne de la niche");
+    }
+    
+    if ((profileData.shareRate || 0) > 2) {
+      strengths.push("Excellent potentiel de viralité par le partage");
+    } else {
+      weaknesses.push("Manque d'appels à l'action pour le partage");
+    }
+    
+    if (hasKeywords) {
+      strengths.push("Bio bien optimisée pour le SEO TikTok");
+    } else {
+      weaknesses.push("Bio sous-optimisée (manque de mots-clés clairs)");
+    }
+    
+    if (strengths.length === 0) strengths.push("Régularité dans la publication");
+    if (weaknesses.length === 0) weaknesses.push("Accroches vidéo (hooks) à dynamiser");
+
+    const possibleTrends = [
+      "Vlogs narratifs (Storytelling)",
+      "Vidéos face-caméra authentiques sans filtre",
+      "Sons trending en fond à faible volume",
+      "Éditing rapide (Cuts toutes les 2-3 secondes)",
+      "Réponses vidéo aux commentaires",
+      "Séries en plusieurs parties"
+    ];
+    
+    const shuffledTrends = possibleTrends.sort(() => 0.5 - Math.random());
+
+    profileData.benchmark = {
+      niche: detectedNiche,
+      competitorAverages: {
+        views: avgViews,
+        engagement: Number(avgEngagement.toFixed(1)),
+        postFrequency: "3-4 fois / semaine"
+      },
+      strengths,
+      weaknesses,
+      nicheTrends: shuffledTrends.slice(0, 3)
+    };
+
+    const contentIdeas = [
+      {
+        title: "L'erreur classique de la niche",
+        hook: "Arrête de faire cette erreur si tu veux vraiment progresser...",
+        script: "1. Présente le problème que tout le monde rencontre. 2. Explique pourquoi les solutions classiques ne marchent pas. 3. Donne ta méthode secrète en 3 étapes claires.",
+        cta: "Enregistre cette vidéo pour ne pas l'oublier et dis-moi si tu faisais cette erreur !",
+        format: "Face-caméra dynamique (Cuts rapides)"
+      },
+      {
+        title: "Le hack de productivité / d'expert",
+        hook: "Voici le secret que les experts de [Ta Niche] ne veulent pas que tu saches...",
+        script: "1. Montre le résultat incroyable que tu as obtenu. 2. Décompose la technique étape par étape en voix off. 3. Montre une preuve concrète que ça fonctionne.",
+        cta: "Abonne-toi pour d'autres astuces de pro comme celle-ci !",
+        format: "Tutoriel visuel ou Vlog (B-roll + Voix off)"
+      },
+      {
+        title: "L'opinion impopulaire",
+        hook: "Je vais me faire des ennemis, mais il faut que quelqu'un le dise...",
+        script: "1. Énonce ton opinion clivante de façon confiante. 2. Donne 2 arguments très logiques pour la soutenir. 3. Retourne la question à ton audience.",
+        cta: "Débattons en commentaire, tu es d'accord avec moi ou pas du tout ?",
+        format: "Face-caméra décontracté (Style conversation)"
+      }
+    ];
+
+    profileData.contentGenerator = {
+      ideas: contentIdeas
     };
   }
 

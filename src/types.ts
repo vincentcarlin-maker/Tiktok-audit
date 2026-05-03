@@ -69,6 +69,31 @@ export interface AnalysisResult {
         community: string;
         growth: string;
       };
+      retention: {
+        estimatedWatchTime: number;
+        dropOffPoint: string;
+        viralComparison: string;
+      };
+    };
+    benchmark?: {
+      niche: string;
+      competitorAverages: {
+        views: number;
+        engagement: number;
+        postFrequency: string;
+      };
+      strengths: string[];
+      weaknesses: string[];
+      nicheTrends: string[];
+    };
+    contentGenerator?: {
+      ideas: {
+        title: string;
+        hook: string;
+        script: string;
+        cta: string;
+        format: string;
+      }[];
     };
   };
   insights: string[];

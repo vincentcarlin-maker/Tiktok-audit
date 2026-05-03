@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
-import { Search, Loader2, TrendingUp, Users, Heart, Video, AlertCircle, Info, Download, ExternalLink, MessageCircle, Share2, Calendar, MapPin, Hash, Clock, Swords, Trash2, Activity, Star, Zap, Euro, Check, CheckCircle, X, AlertTriangle, Award } from 'lucide-react';
+import { Search, Loader2, TrendingUp, Users, Heart, Video, AlertCircle, Info, Download, ExternalLink, MessageCircle, Share2, Calendar, MapPin, Hash, Clock, Swords, Trash2, Activity, Star, Zap, Euro, Check, CheckCircle, X, AlertTriangle, Award, Eye, Lightbulb, PenTool, Megaphone, PlaySquare } from 'lucide-react';
 
 import { motion, AnimatePresence } from 'motion/react';
 import { AnalysisResult } from './types';
@@ -76,10 +76,12 @@ function StatCard({
 }
 
 export default function App() {
-  const [view, setView] = useState<'analytics'>('analytics');
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [appTab, setAppTab] = useState<'search' | 'history'>('search');
+  const [resultTab, setResultTab] = useState<'overview' | 'audit' | 'benchmark' | 'content'>('overview');
+  const [savedAnalyses, setSavedAnalyses] = useState<Record<string, AnalysisResult>>({});
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'recent' | 'views' | 'likes' | 'comments'>('recent');
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
@@ -120,6 +122,14 @@ export default function App() {
         console.error("Error parsing history", e);
       }
     }
+    const savedData = localStorage.getItem('tiktok_analyses_data');
+    if (savedData) {
+      try {
+        setSavedAnalyses(JSON.parse(savedData));
+      } catch (e) {
+        console.error("Error parsing saved analyses", e);
+      }
+    }
 
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -132,9 +142,23 @@ export default function App() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const saveToHistory = (name: string) => {
+  const saveToHistory = (name: string, dataObj?: AnalysisResult) => {
     if (!name) return;
     const cleanName = name.toLowerCase().replace('@', '').trim();
+    
+    if (dataObj) {
+      setSavedAnalyses(prev => {
+        const newData = { ...prev, [cleanName]: dataObj };
+        // keep only the last 10 entries
+        const keys = Object.keys(newData);
+        if (keys.length > 10) {
+          delete newData[keys[0]];
+        }
+        localStorage.setItem('tiktok_analyses_data', JSON.stringify(newData));
+        return newData;
+      });
+    }
+
     setSearchHistory(prev => {
       const filtered = prev.filter(h => h !== cleanName);
       const newHistory = [cleanName, ...filtered].slice(0, 10);
@@ -145,7 +169,9 @@ export default function App() {
 
   const clearHistory = () => {
     setSearchHistory([]);
+    setSavedAnalyses({});
     localStorage.removeItem('tiktok_audit_history');
+    localStorage.removeItem('tiktok_analyses_data');
   };
 
   const exportCSV = () => {
@@ -407,16 +433,26 @@ export default function App() {
   }, [result]);
 
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = async (e: React.FormEvent, forceRefresh = false) => {
+    if (e && e.preventDefault) e.preventDefault();
     if (!username.trim()) return;
+
+    const cleanName = username.toLowerCase().replace('@', '').trim();
+
+    if (!forceRefresh && savedAnalyses[cleanName]) {
+      setResult(savedAnalyses[cleanName]);
+      setAppTab('search');
+      setResultTab('overview');
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
     try {
       const { data, quota, source } = await analyzeTikTokProfile(username, false);
-      setResult({ data, source, insights: [] } as any);
+      const newResult = { data, source, insights: [] } as any;
+      setResult(newResult);
       if (quota && (quota as any).key) {
         setKeysStatus(prev => prev.map(k => 
           k.key === (quota as any).key 
@@ -424,7 +460,8 @@ export default function App() {
             : k
         ));
       }
-      saveToHistory(username);
+      saveToHistory(username, newResult);
+      setAppTab('search');
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -437,7 +474,7 @@ export default function App() {
       {/* Top Navigation */}
       <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('analytics')}>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setAppTab('search')}>
             <div className="bg-gradient-to-tr from-[#FE2C55] to-[#25F4EE] p-1.5 rounded-xl text-white shadow-sm shadow-red-100">
               <TrendingUp size={20} />
             </div>
@@ -446,10 +483,16 @@ export default function App() {
 
             <nav className="flex items-center bg-slate-100 p-1 rounded-2xl">
               <button 
-                onClick={() => setView('analytics')}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black transition-all ${view === 'analytics' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                onClick={() => setAppTab('search')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black transition-all ${appTab === 'search' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 <Search size={14} /> Audit
+              </button>
+              <button 
+                onClick={() => setAppTab('history')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black transition-all ${appTab === 'history' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                <Clock size={14} /> Historique
               </button>
             </nav>
 
@@ -548,7 +591,7 @@ export default function App() {
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         
-        {view === 'analytics' && (
+        {appTab === 'search' && (
           <>
             <div className="text-center max-w-3xl mx-auto mb-16">
             <motion.h1 
@@ -781,8 +824,18 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Sub Navigation for Result */}
+              <div className="flex overflow-x-auto bg-slate-100 p-2 rounded-[24px] w-full max-w-4xl mx-auto hide-scrollbar gap-2">
+                 <button onClick={() => setResultTab('overview')} className={`shrink-0 flex-1 px-6 py-3 rounded-xl text-sm font-black transition-all ${resultTab === 'overview' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'}`}>Vue Globale</button>
+                 <button onClick={() => setResultTab('audit')} className={`shrink-0 flex-1 px-6 py-3 rounded-xl text-sm font-black transition-all ${resultTab === 'audit' ? 'bg-white shadow-sm text-fuchsia-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'}`}>Audit & Rétention</button>
+                 <button onClick={() => setResultTab('benchmark')} className={`shrink-0 flex-1 px-6 py-3 rounded-xl text-sm font-black transition-all ${resultTab === 'benchmark' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'}`}>Benchmark Concurrents</button>
+                 <button onClick={() => setResultTab('content')} className={`shrink-0 flex-1 px-6 py-3 rounded-xl text-sm font-black transition-all ${resultTab === 'content' ? 'bg-white shadow-sm text-rose-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'}`}>Générateur & Vidéos</button>
+              </div>
+
               {/* Audit & Notes Section */}
-              {result.data.audit && (
+              {resultTab === 'audit' && (
+                <>
+                  {result.data.audit && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                   
                   {/* Notes de Performance */}
@@ -864,6 +917,151 @@ export default function App() {
                 </div>
               )}
 
+              {/* Analyse de la Rétention */}
+              {result.data.audit && result.data.audit.retention && (
+                <div className="max-w-4xl mx-auto mt-6 mb-6">
+                  <div className="bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100/50 rounded-[40px] p-8">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-6 flex items-center gap-2">
+                       <Eye size={16} />
+                       Estimations de Rétention & Visionnage
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                       <div className="bg-white p-5 rounded-3xl shadow-sm">
+                          <p className="text-[10px] uppercase font-bold text-slate-400 mb-2">% de Visionnage</p>
+                          <p className="text-3xl font-black text-indigo-900">{result.data.audit.retention.estimatedWatchTime}%</p>
+                          <div className="w-full h-1.5 bg-slate-100 rounded-full mt-3 overflow-hidden">
+                             <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${result.data.audit.retention.estimatedWatchTime}%` }}></div>
+                          </div>
+                       </div>
+                       <div className="bg-white p-5 rounded-3xl shadow-sm">
+                          <p className="text-[10px] uppercase font-bold text-slate-400 mb-2">Moment du décrochage</p>
+                          <p className="text-sm font-bold text-slate-800 leading-snug">{result.data.audit.retention.dropOffPoint}</p>
+                       </div>
+                       <div className="bg-white p-5 rounded-3xl shadow-sm border border-indigo-50">
+                          <p className="text-[10px] uppercase font-bold text-slate-400 mb-2">Comparaison Virale</p>
+                          <p className="text-sm font-bold text-indigo-900 leading-snug">{result.data.audit.retention.viralComparison}</p>
+                       </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+                </>
+              )}
+
+              {/* Benchmark Concurrent Section */}
+              {resultTab === 'benchmark' && result.data.benchmark && (
+                <div className="max-w-4xl mx-auto mt-6 mb-6">
+                  <div className="bg-white border border-slate-100 rounded-[40px] p-8 shadow-sm">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-6 flex items-center gap-2">
+                       <Swords size={16} />
+                       Benchmark par rapport aux concurrents
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                       <div>
+                          <div className="bg-slate-50 rounded-3xl p-6 mb-6">
+                             <p className="text-xs font-bold text-slate-500 mb-4 uppercase tracking-wide">Moyennes de la niche : {result.data.benchmark.niche}</p>
+                             <div className="flex flex-col gap-3">
+                               <div className="flex justify-between items-center bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
+                                  <span className="text-sm font-medium text-slate-600">Vues / vidéo</span>
+                                  <span className="text-sm font-black text-slate-900">{result.data.benchmark.competitorAverages.views >= 1000 ? (result.data.benchmark.competitorAverages.views / 1000).toFixed(1) + 'k' : result.data.benchmark.competitorAverages.views}</span>
+                               </div>
+                               <div className="flex justify-between items-center bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
+                                  <span className="text-sm font-medium text-slate-600">Taux d'engagement</span>
+                                  <span className="text-sm font-black text-slate-900">{result.data.benchmark.competitorAverages.engagement}%</span>
+                               </div>
+                               <div className="flex justify-between items-center bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
+                                  <span className="text-sm font-medium text-slate-600">Fréquence de post</span>
+                                  <span className="text-sm font-black text-slate-900">{result.data.benchmark.competitorAverages.postFrequency}</span>
+                               </div>
+                             </div>
+                          </div>
+                          
+                          <div className="bg-indigo-50 rounded-3xl p-6">
+                             <p className="text-xs font-bold text-indigo-600 mb-4 uppercase tracking-wide flex items-center gap-2"><TrendingUp size={14}/> Tendances actuelles</p>
+                             <ul className="space-y-3">
+                               {result.data.benchmark.nicheTrends.map((trend, i) => (
+                                 <li key={i} className="flex items-start gap-2 text-sm text-indigo-900">
+                                   <Zap size={16} className="text-amber-500 shrink-0 mt-0.5" />
+                                   <span className="font-medium">{trend}</span>
+                                 </li>
+                               ))}
+                             </ul>
+                          </div>
+                       </div>
+                       
+                       <div className="flex flex-col gap-6">
+                          <div className="bg-emerald-50 rounded-3xl p-6 flex-1">
+                             <p className="text-xs font-bold text-emerald-600 mb-4 uppercase tracking-wide flex items-center gap-2"><CheckCircle size={14}/> Vos Forces</p>
+                             <ul className="space-y-3">
+                               {result.data.benchmark.strengths.map((strength, i) => (
+                                 <li key={i} className="flex items-start gap-2 text-sm text-emerald-900">
+                                   <div className="bg-emerald-200 p-1 rounded-full shrink-0 mt-0.5"><Check size={10} className="text-emerald-700" /></div>
+                                   <span className="font-medium">{strength}</span>
+                                 </li>
+                               ))}
+                             </ul>
+                          </div>
+                          <div className="bg-rose-50 rounded-3xl p-6 flex-1">
+                             <p className="text-xs font-bold text-rose-600 mb-4 uppercase tracking-wide flex items-center gap-2"><AlertCircle size={14}/> Points d'Amélioration</p>
+                             <ul className="space-y-3">
+                               {result.data.benchmark.weaknesses.map((weakness, i) => (
+                                 <li key={i} className="flex items-start gap-2 text-sm text-rose-900">
+                                   <div className="bg-rose-200 p-1 rounded-full shrink-0 mt-0.5"><X size={10} className="text-rose-700" /></div>
+                                   <span className="font-medium">{weakness}</span>
+                                 </li>
+                               ))}
+                             </ul>
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Générateur de Contenu */}
+              {resultTab === 'content' && result.data.contentGenerator && (
+                <div className="max-w-4xl mx-auto mt-6 mb-6">
+                  <div className="bg-gradient-to-br from-fuchsia-50 to-pink-50 border border-fuchsia-100/50 rounded-[40px] p-8">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-fuchsia-600 mb-6 flex items-center gap-2">
+                       <Lightbulb size={16} />
+                       Générateur de Contenu SaaS
+                    </h3>
+                    
+                    <div className="space-y-6">
+                       {result.data.contentGenerator.ideas.map((idea, index) => (
+                         <div key={index} className="bg-white p-6 rounded-3xl shadow-sm border border-fuchsia-100/50">
+                            <div className="flex justify-between items-start mb-4">
+                              <h4 className="font-black text-lg text-slate-900">{idea.title}</h4>
+                              <span className="text-xs font-bold px-3 py-1 bg-fuchsia-100 text-fuchsia-700 rounded-full flex items-center gap-1"><PlaySquare size={12}/> {idea.format}</span>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+                               <div className="bg-amber-50 p-4 rounded-2xl">
+                                  <p className="text-[10px] font-black uppercase text-amber-600 tracking-wide mb-2 flex items-center gap-1.5"><Megaphone size={14}/> Accroche Fort (Hook)</p>
+                                  <p className="text-sm font-bold text-amber-900">"{idea.hook}"</p>
+                               </div>
+                               
+                               <div className="bg-slate-50 p-4 rounded-2xl">
+                                  <p className="text-[10px] font-black uppercase text-slate-500 tracking-wide mb-2 flex items-center gap-1.5"><PenTool size={14}/> Script prêt à tourner</p>
+                                  <p className="text-sm font-medium text-slate-700 leading-relaxed whitespace-pre-line">{idea.script.replace(/\d\./g, '\n$&').trim()}</p>
+                               </div>
+                               
+                               <div className="bg-indigo-50 p-4 rounded-2xl">
+                                  <p className="text-[10px] font-black uppercase text-indigo-600 tracking-wide mb-2 flex items-center gap-1.5"><TrendingUp size={14}/> Call-To-Action (CTA)</p>
+                                  <p className="text-sm font-bold text-indigo-900">"{idea.cta}"</p>
+                               </div>
+                            </div>
+                         </div>
+                       ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Overview Wrapper */}
+              {resultTab === 'overview' && (
+                <>
               {/* Virality & Revenue Section */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                  {/* Virality Score */}
@@ -1241,9 +1439,11 @@ export default function App() {
                   )}
                 </div>
               </div>
+                </>
+              )}
 
               {/* Latest Videos Area */}
-              {result.data.videos && result.data.videos.length > 0 && (
+              {resultTab === 'content' && result.data.videos && result.data.videos.length > 0 && (
                 <div className="mt-8 page-break-before">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
                     <h3 className="text-2xl font-black">Dernières Vidéos</h3>
@@ -1469,8 +1669,94 @@ export default function App() {
       </div>
     </>
     )}
-  </main>
-</div>
+
+        {appTab === 'history' && (
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+                <Clock className="text-indigo-500" /> Historique des Audits
+              </h2>
+              {Object.keys(savedAnalyses).length > 0 && (
+                <button 
+                  onClick={clearHistory}
+                  className="px-4 py-2 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors flex items-center gap-2"
+                >
+                  <Trash2 size={14} /> Effacer
+                </button>
+              )}
+            </div>
+
+            {Object.keys(savedAnalyses).length === 0 ? (
+              <div className="text-center py-20 bg-white rounded-[40px] border border-slate-100 shadow-sm">
+                 <div className="bg-slate-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Clock size={32} className="text-slate-300" />
+                 </div>
+                 <h3 className="text-xl font-bold text-slate-900 mb-2">Aucun historique</h3>
+                 <p className="text-slate-500 font-medium">Vous n'avez pas encore effectué d'audit.</p>
+                 <button 
+                   onClick={() => setAppTab('search')}
+                   className="mt-6 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl transition-colors"
+                 >
+                   Faire un audit
+                 </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {Object.values(savedAnalyses).reverse().map((analysis, index) => {
+                  if (!analysis || !analysis.data) return null;
+                  
+                  return (
+                    <div 
+                      key={index} 
+                      className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col"
+                      onClick={() => {
+                        setResult(analysis);
+                        setAppTab('search');
+                        setResultTab('overview');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex items-center gap-4">
+                          <img 
+                            src={analysis.data.profile.avatar || `https://ui-avatars.com/api/?name=${analysis.data.username}&background=random`} 
+                            alt={analysis.data.username} 
+                            className="w-16 h-16 rounded-full object-cover border-2 border-slate-100"
+                            crossOrigin="anonymous"
+                          />
+                          <div>
+                            <h3 className="font-black text-lg text-slate-900">@{analysis.data.username}</h3>
+                            <p className="text-sm font-medium text-slate-500">{analysis.data.profile.nickname}</p>
+                          </div>
+                        </div>
+                        <div className={`px-3 py-1 text-xs font-bold rounded-full ${analysis.data.viralityScore > 70 ? 'bg-fuchsia-50 text-fuchsia-700' : 'bg-slate-100 text-slate-600'}`}>
+                           {analysis.data.viralityScore}/100 Virality
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-2 mt-auto">
+                        <div className="bg-slate-50 p-3 rounded-2xl text-center">
+                           <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Abonnés</p>
+                           <p className="text-sm font-black text-slate-900">{formatNumber(analysis.data.stats.followers)}</p>
+                        </div>
+                        <div className="bg-slate-50 p-3 rounded-2xl text-center">
+                           <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Engagement</p>
+                           <p className="text-sm font-black text-slate-900">{analysis.data.stats.engagementRate}%</p>
+                        </div>
+                        <div className="bg-slate-50 p-3 rounded-2xl text-center">
+                           <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Rev / mois</p>
+                           <p className="text-sm font-black text-slate-900">{analysis.data.revenueInfo.monthly[0]}€</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+    </div>
   );
 }
 
