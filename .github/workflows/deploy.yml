@@ -29,7 +29,6 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          # C'est ici que GitHub injectera votre clé secrète au moment de la compilation
           VITE_RAPIDAPI_KEY: ${{ secrets.VITE_RAPIDAPI_KEY }}
 
       - name: Upload artifact
