@@ -94,7 +94,8 @@ export default function App() {
       key: k.slice(0, 4) + '...' + k.slice(-4),
       remaining: -1,
       limit: -1,
-      lastUsed: 0
+      lastUsed: 0,
+      status: 'idle'
     }));
   });
   const [showKeysStatus, setShowKeysStatus] = useState(false);
@@ -204,21 +205,27 @@ export default function App() {
     
     setIsExportingMediaKit(true);
     try {
+      // Force a desktop-like viewport for the capture
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
+        width: 800, // Matching the w-[800px] class
+        windowWidth: 800,
         onclone: (clonedDoc) => {
           normalizeOklch(clonedDoc);
-          // Ensure the media-kit-container is visible in the clone
+          // Ensure the media-kit-container is visible and correctly sized in the clone
           const container = clonedDoc.getElementById('media-kit-container');
           if (container) {
-            container.style.position = 'static';
+            container.style.position = 'relative';
             container.style.left = '0';
+            container.style.top = '0';
             container.style.opacity = '1';
             container.style.display = 'block';
+            container.style.width = '800px';
+            container.style.margin = '0';
           }
         }
       });
@@ -272,37 +279,43 @@ export default function App() {
     
     setIsExportingPDF(true);
     try {
-      // Create a copy or handle scrolling to top for capture reliability
+      // Force a fixed width for capture to prevent responsive alignment issues
+      const captureWidth = 1280; 
       const canvas = await html2canvas(element, { 
         scale: 2, 
         useCORS: true, 
         allowTaint: true,
         backgroundColor: '#f8fafc',
         logging: false,
-        width: element.scrollWidth,
-        height: element.scrollHeight,
-        windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight,
+        width: captureWidth,
+        windowWidth: captureWidth,
         onclone: (clonedDoc) => {
           normalizeOklch(clonedDoc);
+          const dashboard = clonedDoc.getElementById('analytics-dashboard');
+          if (dashboard) {
+            dashboard.style.width = `${captureWidth}px`;
+            dashboard.style.maxWidth = 'none';
+          }
         }
       });
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      let heightLeft = pdfHeight;
-      let position = 0;
+      const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      let heightLeft = imgHeight;
+      let position = 0;
 
-      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
 
-      while (heightLeft >= 0) {
-        position = heightLeft - pdfHeight;
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
         pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
       }
 
@@ -395,7 +408,7 @@ export default function App() {
       if (quota && (quota as any).key) {
         setKeysStatus(prev => prev.map(k => 
           k.key === (quota as any).key 
-            ? { ...quota, lastUsed: Date.now() } 
+            ? { ...k, ...quota, lastUsed: Date.now(), status: 'active' } 
             : k
         ));
       }
@@ -443,22 +456,19 @@ export default function App() {
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute top-full right-0 mt-2 w-64 bg-white border border-slate-200 rounded-3xl shadow-2xl p-4 z-[100]"
+                    className="absolute top-full right-0 mt-2 w-72 bg-white border border-slate-200 rounded-3xl shadow-2xl p-4 z-[100]"
                   >
                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center justify-between">
-                      Quotas RapidAPI
+                      Statut des Clés RapidAPI
                       <Activity size={12} className="text-indigo-500" />
                     </h3>
                     
-                    {keysStatus.length === 0 ? (
-                      <p className="text-xs text-slate-400 text-center py-4 font-medium italic">Aucune donnée encore. Lancez un audit pour vérifier les quotas.</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {keysStatus.map((ks) => (
-                          <div key={ks.key} className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="max-h-96 overflow-y-auto pr-2 custom-scrollbar space-y-3">
+                      {keysStatus.map((ks) => (
+                        <div key={ks.key} className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
                             <div className="flex justify-between items-center mb-2">
                               <span className="text-[10px] font-mono font-bold text-slate-500">Clé: {ks.key}</span>
-                              <div className={`w-2 h-2 rounded-full ${ks.remaining > 10 ? 'bg-emerald-500 animate-pulse' : ks.remaining > 0 ? 'bg-amber-500' : 'bg-red-500'}`}></div>
+                              <div className={`w-2 h-2 rounded-full ${ks.status === 'active' ? (ks.remaining > 10 ? 'bg-emerald-500 animate-pulse' : ks.remaining > 0 ? 'bg-amber-500' : 'bg-red-500') : 'bg-slate-300'}`}></div>
                             </div>
                             <div className="flex items-end justify-between gap-1 mb-1">
                                <span className="text-lg font-black text-slate-900 leading-none">
@@ -470,8 +480,8 @@ export default function App() {
                             </div>
                             <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
                                <div 
-                                 className={`h-full transition-all duration-1000 ${ks.remaining === -1 ? 'bg-slate-300' : ks.remaining > 10 ? 'bg-emerald-500' : ks.remaining > 0 ? 'bg-amber-500' : 'bg-red-500'}`}
-                                 style={{ width: ks.remaining === -1 ? '0%' : `${(ks.remaining / ks.limit) * 100}%` }}
+                                 className={`h-full transition-all duration-1000 ${ks.remaining === -1 ? 'bg-slate-300 animate-pulse' : ks.remaining > 10 ? 'bg-emerald-500' : ks.remaining > 0 ? 'bg-amber-500' : 'bg-red-500'}`}
+                                 style={{ width: ks.remaining === -1 ? '100%' : `${(ks.remaining / ks.limit) * 100}%` }}
                                />
                             </div>
                             <p className="text-[9px] text-slate-400 mt-2 font-medium">
@@ -479,8 +489,7 @@ export default function App() {
                             </p>
                           </div>
                         ))}
-                      </div>
-                    )}
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -1271,23 +1280,25 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-8 mb-12">
-                <div className="bg-slate-50 p-6 rounded-3xl text-center">
+              {/* Stats Bar */}
+              <div className="flex gap-8 mb-12">
+                <div className="flex-1 bg-slate-50 p-6 rounded-3xl text-center">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Abonnés</p>
                   <p className="text-3xl font-black text-slate-900">{formatNumber(result.data.stats.followers)}</p>
                 </div>
-                <div className="bg-slate-50 p-6 rounded-3xl text-center">
+                <div className="flex-1 bg-slate-50 p-6 rounded-3xl text-center">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Engagement</p>
                   <p className="text-3xl font-black text-slate-900">{result.data.stats.engagementRate}%</p>
                 </div>
-                <div className="bg-slate-50 p-6 rounded-3xl text-center">
+                <div className="flex-1 bg-slate-50 p-6 rounded-3xl text-center">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Total Likes</p>
                   <p className="text-3xl font-black text-slate-900">{formatNumber(result.data.stats.likes)}</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-8 mb-12">
-                 <div className="p-8 border border-slate-100 rounded-3xl shadow-sm">
+              {/* Performances & Audience */}
+              <div className="flex gap-8 mb-12">
+                 <div className="w-1/2 p-8 border border-slate-100 rounded-3xl shadow-sm">
                     <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">Performances Moyennes</h3>
                     <div className="space-y-4">
                        <div className="flex justify-between items-center bg-slate-50 p-3 rounded-2xl">
@@ -1308,7 +1319,7 @@ export default function App() {
                        </div>
                     </div>
                  </div>
-                 <div className="p-8 border border-slate-100 rounded-3xl bg-indigo-50/20 shadow-sm relative overflow-hidden">
+                 <div className="w-1/2 p-8 border border-slate-100 rounded-3xl bg-indigo-50/20 shadow-sm relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full -translate-y-12 translate-x-12"></div>
                     <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-6">Tendances & Audience</h3>
                     <div className="flex flex-wrap gap-2 mb-6">
@@ -1339,9 +1350,9 @@ export default function App() {
                 <div className="flex justify-between items-center mb-6">
                    <p className="text-[10px] font-black uppercase tracking-widest opacity-50">Derniers Contenus</p>
                 </div>
-                <div className="grid grid-cols-5 gap-3">
+                <div className="flex gap-3">
                    {result.data.videos?.slice(0, 5).map((v: any) => (
-                     <div key={v.id} className="aspect-[9/16] rounded-xl overflow-hidden relative border border-white/5">
+                     <div key={v.id} className="flex-1 aspect-[9/16] rounded-xl overflow-hidden relative border border-white/5">
                        {v.cover && <img src={v.cover} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />}
                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-2">
                          <span className="text-[10px] font-black text-white">{formatNumber(v.views)}</span>
