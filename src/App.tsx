@@ -1737,62 +1737,62 @@ export default function App() {
       </main>
 
       {/* Bottom Floating Navigation */}
-      <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
-        <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 p-2 rounded-[32px] shadow-2xl flex items-center justify-between font-sans pointer-events-auto">
+      <div className="fixed bottom-6 left-4 right-4 z-50 flex justify-center pointer-events-none">
+        <div className={`bg-slate-900/95 backdrop-blur-xl border border-white/10 p-1.5 rounded-[32px] shadow-2xl flex items-center font-sans pointer-events-auto transition-all duration-500 ease-out ${result ? 'max-w-lg w-full justify-between' : 'w-fit justify-center gap-2'}`}>
            <button 
              onClick={() => { setAppTab('search'); setResult(null); }} 
-             className={`flex flex-col items-center gap-1 min-w-[72px] px-2 py-2 rounded-[24px] transition-all ${appTab === 'search' && !result ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+             className={`flex flex-col items-center gap-0.5 min-w-[60px] px-1 py-1.5 rounded-[24px] transition-all ${appTab === 'search' && !result ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
            >
-             <Search size={22} className={appTab === 'search' && !result ? 'stroke-[2.5px]' : ''} />
-             <span className="text-[10px] font-bold">Nouveau</span>
+             <Search size={20} className={appTab === 'search' && !result ? 'stroke-[2.5px]' : ''} />
+             <span className="text-[9px] font-bold">Nouveau</span>
            </button>
            
            {result && appTab === 'search' && (
              <>
-               <div className="w-px h-8 bg-white/10 mx-1"></div>
+               <div className="w-px h-6 bg-white/10 mx-0.5"></div>
                
                <button 
                  onClick={() => setResultTab('overview')} 
-                 className={`flex flex-col items-center gap-1 min-w-[72px] px-2 py-2 rounded-[24px] transition-all ${resultTab === 'overview' ? 'bg-[#25F4EE]/20 text-[#25F4EE]' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+                 className={`flex flex-col items-center gap-0.5 min-w-[60px] px-1 py-1.5 rounded-[24px] transition-all ${resultTab === 'overview' ? 'bg-[#25F4EE]/20 text-[#25F4EE]' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
                >
-                 <Activity size={22} className={resultTab === 'overview' ? 'stroke-[2.5px]' : ''} />
-                 <span className="text-[10px] font-bold">Global</span>
+                 <Activity size={20} className={resultTab === 'overview' ? 'stroke-[2.5px]' : ''} />
+                 <span className="text-[9px] font-bold">Global</span>
                </button>
                
                <button 
                  onClick={() => setResultTab('audit')} 
-                 className={`flex flex-col items-center gap-1 min-w-[72px] px-2 py-2 rounded-[24px] transition-all ${resultTab === 'audit' ? 'bg-fuchsia-500/20 text-fuchsia-400' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+                 className={`flex flex-col items-center gap-0.5 min-w-[60px] px-1 py-1.5 rounded-[24px] transition-all ${resultTab === 'audit' ? 'bg-fuchsia-500/20 text-fuchsia-400' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
                >
-                 <Eye size={22} className={resultTab === 'audit' ? 'stroke-[2.5px]' : ''} />
-                 <span className="text-[10px] font-bold">Audit</span>
+                 <Eye size={20} className={resultTab === 'audit' ? 'stroke-[2.5px]' : ''} />
+                 <span className="text-[9px] font-bold">Audit</span>
                </button>
                
                <button 
                  onClick={() => setResultTab('benchmark')} 
-                 className={`flex flex-col items-center gap-1 min-w-[72px] px-2 py-2 rounded-[24px] transition-all ${resultTab === 'benchmark' ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+                 className={`flex flex-col items-center gap-0.5 min-w-[60px] px-1 py-1.5 rounded-[24px] transition-all ${resultTab === 'benchmark' ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
                >
-                 <Swords size={22} className={resultTab === 'benchmark' ? 'stroke-[2.5px]' : ''} />
-                 <span className="text-[10px] font-bold">Rivaux</span>
+                 <Swords size={20} className={resultTab === 'benchmark' ? 'stroke-[2.5px]' : ''} />
+                 <span className="text-[9px] font-bold">Rivaux</span>
                </button>
                
                <button 
                  onClick={() => setResultTab('content')} 
-                 className={`flex flex-col items-center gap-1 min-w-[72px] px-2 py-2 rounded-[24px] transition-all ${resultTab === 'content' ? 'bg-rose-500/20 text-rose-400' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+                 className={`flex flex-col items-center gap-0.5 min-w-[60px] px-1 py-1.5 rounded-[24px] transition-all ${resultTab === 'content' ? 'bg-rose-500/20 text-rose-400' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
                >
-                 <Lightbulb size={22} className={resultTab === 'content' ? 'stroke-[2.5px]' : ''} />
-                 <span className="text-[10px] font-bold">Idées</span>
+                 <Lightbulb size={20} className={resultTab === 'content' ? 'stroke-[2.5px]' : ''} />
+                 <span className="text-[9px] font-bold">Idées</span>
                </button>
              </>
            )}
 
-           <div className="w-px h-8 bg-white/10 mx-1"></div>
+           <div className="w-px h-6 bg-white/10 mx-0.5"></div>
 
            <button 
              onClick={() => setAppTab('history')} 
-             className={`flex flex-col items-center gap-1 min-w-[72px] px-2 py-2 rounded-[24px] transition-all ${appTab === 'history' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+             className={`flex flex-col items-center gap-0.5 min-w-[60px] px-1 py-1.5 rounded-[24px] transition-all ${appTab === 'history' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
            >
-             <Clock size={22} className={appTab === 'history' ? 'stroke-[2.5px]' : ''} />
-             <span className="text-[10px] font-bold">Historique</span>
+             <Clock size={20} className={appTab === 'history' ? 'stroke-[2.5px]' : ''} />
+             <span className="text-[9px] font-bold">Historique</span>
            </button>
         </div>
       </div>

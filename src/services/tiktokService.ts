@@ -513,23 +513,23 @@ export const analyzeTikTokProfile = async (username: string, isDemo: boolean = f
 
     const contentIdeas = [
       {
-        title: "L'erreur classique de la niche",
-        hook: "Arrête de faire cette erreur si tu veux vraiment progresser...",
+        title: `L'erreur classique dans la niche ${detectedNiche}`,
+        hook: `Arrête de faire cette erreur dans ${detectedNiche} si tu veux vraiment progresser...`,
         script: "1. Présente le problème que tout le monde rencontre. 2. Explique pourquoi les solutions classiques ne marchent pas. 3. Donne ta méthode secrète en 3 étapes claires.",
         cta: "Enregistre cette vidéo pour ne pas l'oublier et dis-moi si tu faisais cette erreur !",
         format: "Face-caméra dynamique (Cuts rapides)"
       },
       {
-        title: "Le hack de productivité / d'expert",
-        hook: "Voici le secret que les experts de [Ta Niche] ne veulent pas que tu saches...",
+        title: "Le hack d'expert",
+        hook: `Voici le secret que les experts de ${detectedNiche} ne veulent pas que tu saches...`,
         script: "1. Montre le résultat incroyable que tu as obtenu. 2. Décompose la technique étape par étape en voix off. 3. Montre une preuve concrète que ça fonctionne.",
         cta: "Abonne-toi pour d'autres astuces de pro comme celle-ci !",
         format: "Tutoriel visuel ou Vlog (B-roll + Voix off)"
       },
       {
         title: "L'opinion impopulaire",
-        hook: "Je vais me faire des ennemis, mais il faut que quelqu'un le dise...",
-        script: "1. Énonce ton opinion clivante de façon confiante. 2. Donne 2 arguments très logiques pour la soutenir. 3. Retourne la question à ton audience.",
+        hook: "Je vais me faire des ennemis dans ce milieu, mais il faut que quelqu'un le dise...",
+        script: "1. Énonce ton opinion clivante sur le marché de façon confiante. 2. Donne 2 arguments très logiques pour la soutenir. 3. Retourne la question à ton audience.",
         cta: "Débattons en commentaire, tu es d'accord avec moi ou pas du tout ?",
         format: "Face-caméra décontracté (Style conversation)"
       }
