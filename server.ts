@@ -1,12 +1,15 @@
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
+import cors from 'cors';
+
 const keyStatusMap: Record<string, { remaining: number; limit: number; lastUsed: number }> = {};
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
   
+  app.use(cors());
   app.use(express.json());
 
   // API Route to check keys status

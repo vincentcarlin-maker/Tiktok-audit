@@ -6,6 +6,7 @@ import { Search, Loader2, TrendingUp, Users, Heart, Video, AlertCircle, Info, Do
 import { motion, AnimatePresence } from 'motion/react';
 import { AnalysisResult } from './types';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { analyzeTikTokProfile } from './services/tiktokService';
 
 function formatNumber(num: number): string {
   if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
@@ -77,7 +78,6 @@ export default function App() {
   const [view, setView] = useState<'analytics'>('analytics');
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
-  const API_BASE = import.meta.env.VITE_API_URL || '';
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'recent' | 'views' | 'likes' | 'comments'>('recent');
@@ -85,20 +85,6 @@ export default function App() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [isExportingMediaKit, setIsExportingMediaKit] = useState(false);
-  const [keysStatus, setKeysStatus] = useState<any[]>([]);
-  const [showKeysStatus, setShowKeysStatus] = useState(false);
-
-  const fetchKeysStatus = async () => {
-    try {
-      const response = await fetch(`${API_BASE}/api/keys-status`);
-      if (response.ok) {
-        const data = await response.json();
-        setKeysStatus(data);
-      }
-    } catch (e) {
-      console.error("Error fetching keys status", e);
-    }
-  };
 
   const POPULAR_ACCOUNTS = [
     'khaby.lame', 'charlidamelio', 'mrbeast', 'bellapoarch', 'addisonre', 
@@ -129,7 +115,6 @@ export default function App() {
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    fetchKeysStatus();
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
@@ -354,21 +339,9 @@ export default function App() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE}/api/analyze`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, demo: false }) 
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Erreur lors de l'analyse");
-      }
-
-      setResult(data);
+      const data = await analyzeTikTokProfile(username, false);
+      setResult(data as any);
       saveToHistory(username);
-      fetchKeysStatus();
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -397,66 +370,11 @@ export default function App() {
               </button>
             </nav>
 
-            {/* Keys Status Menu */}
-            <div className="relative ml-2 sm:ml-4">
-              <button 
-                onClick={() => setShowKeysStatus(!showKeysStatus)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${keysStatus.length > 0 ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
-              >
-                <Activity size={12} />
-                <span className="hidden xs:inline">Statut API</span>
-              </button>
-
-              <AnimatePresence>
-                {showKeysStatus && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute top-full right-0 mt-2 w-64 bg-white border border-slate-200 rounded-3xl shadow-2xl p-4 z-[100]"
-                  >
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center justify-between">
-                      Quotas RapidAPI
-                      <button onClick={() => fetchKeysStatus()} className="text-indigo-500 hover:text-indigo-600 active:rotate-180 transition-all">
-                        <Activity size={12} />
-                      </button>
-                    </h3>
-                    
-                    {keysStatus.length === 0 ? (
-                      <p className="text-xs text-slate-400 text-center py-4 font-medium italic">Aucune donnée encore. Lancez un audit pour vérifier les quotas.</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {keysStatus.map((ks, i) => (
-                          <div key={ks.key} className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-[10px] font-mono font-bold text-slate-500">Clé #{i+1}: {ks.key}</span>
-                              <div className={`w-2 h-2 rounded-full ${ks.remaining > 10 ? 'bg-emerald-500 animate-pulse' : ks.remaining > 0 ? 'bg-amber-500' : 'bg-red-500'}`}></div>
-                            </div>
-                            <div className="flex items-end justify-between gap-1 mb-1">
-                               <span className="text-lg font-black text-slate-900 leading-none">{ks.remaining}</span>
-                               <span className="text-[10px] font-bold text-slate-400 pb-0.5">/ {ks.limit}</span>
-                            </div>
-                            <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                               <div 
-                                 className={`h-full transition-all duration-1000 ${ks.remaining > 10 ? 'bg-emerald-500' : ks.remaining > 0 ? 'bg-amber-500' : 'bg-red-500'}`}
-                                 style={{ width: `${(ks.remaining / ks.limit) * 100}%` }}
-                               />
-                            </div>
-                            <p className="text-[9px] text-slate-400 mt-2 font-medium">Dernier usage: {new Date(ks.lastUsed).toLocaleTimeString()}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-             {result && !loading && (
-               <>
-                 <button 
-                  onClick={exportMediaKit}
+            <div className="flex items-center gap-2 sm:gap-3">
+              {result && !loading && (
+                <>
+                  <button 
+                   onClick={exportMediaKit}
                   disabled={isExportingMediaKit}
                   className="hidden md:flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 shadow-sm"
                 >
