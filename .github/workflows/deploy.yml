@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main"] # Ou le nom de votre branche principale
   workflow_dispatch:
 
 permissions:
@@ -29,7 +29,8 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          # C'est ici que GitHub injectera votre clé secrète au moment de la compilation
+          VITE_RAPIDAPI_KEY: ${{ secrets.VITE_RAPIDAPI_KEY }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
