@@ -578,9 +578,8 @@ export default function App() {
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 pb-28 sm:pb-32">
         
-        {appTab === 'search' && (
-          <>
-            <div className="text-center max-w-3xl mx-auto mb-16">
+        {appTab === 'search' && !result && (
+          <div className="text-center max-w-3xl mx-auto mb-16">
             <motion.h1 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -709,6 +708,7 @@ export default function App() {
               </AnimatePresence>
             </motion.form>
           </div>
+        )}
 
           <div className="space-y-10">
             {/* Error State */}
@@ -1646,8 +1646,7 @@ export default function App() {
           </div>
         )}
       </div>
-    </>
-    )}
+
 
         {appTab === 'history' && (
           <div className="max-w-4xl mx-auto">
@@ -1681,7 +1680,7 @@ export default function App() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {Object.values(savedAnalyses).reverse().map((analysis, index) => {
+                {Object.values(savedAnalyses).reverse().map((analysis: AnalysisResult, index: number) => {
                   if (!analysis || !analysis.data) return null;
                   
                   return (
