@@ -481,21 +481,7 @@ export default function App() {
             <span className="font-black text-xl tracking-tighter">TikTok<span className="text-[#FE2C55]">Audit</span></span>
           </div>
 
-            <nav className="flex items-center bg-slate-100 p-1 rounded-2xl">
-              <button 
-                onClick={() => setAppTab('search')}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black transition-all ${appTab === 'search' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-              >
-                <Search size={14} /> Audit
-              </button>
-              <button 
-                onClick={() => setAppTab('history')}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black transition-all ${appTab === 'history' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-              >
-                <Clock size={14} /> Historique
-              </button>
-            </nav>
-
+          <div className="flex items-center gap-4">
             <div className="relative ml-2 sm:ml-4">
               <button 
                 onClick={() => setShowKeysStatus(!showKeysStatus)}
@@ -585,11 +571,12 @@ export default function App() {
                 )}
                 <div className="w-8 h-8 rounded-full bg-slate-200 animate-pulse"></div>
              </div>
-          </div>
-        </div>
-      </header>
+           </div>
+         </div>
+       </div>
+     </header>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 pb-28 sm:pb-32">
         
         {appTab === 'search' && (
           <>
@@ -822,14 +809,6 @@ export default function App() {
                     {isExportingPDF ? 'Exporting...' : 'PDF'}
                   </button>
                 </div>
-              </div>
-
-              {/* Sub Navigation for Result */}
-              <div className="flex overflow-x-auto bg-slate-100 p-2 rounded-[24px] w-full max-w-4xl mx-auto hide-scrollbar gap-2">
-                 <button onClick={() => setResultTab('overview')} className={`shrink-0 flex-1 px-6 py-3 rounded-xl text-sm font-black transition-all ${resultTab === 'overview' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'}`}>Vue Globale</button>
-                 <button onClick={() => setResultTab('audit')} className={`shrink-0 flex-1 px-6 py-3 rounded-xl text-sm font-black transition-all ${resultTab === 'audit' ? 'bg-white shadow-sm text-fuchsia-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'}`}>Audit & Rétention</button>
-                 <button onClick={() => setResultTab('benchmark')} className={`shrink-0 flex-1 px-6 py-3 rounded-xl text-sm font-black transition-all ${resultTab === 'benchmark' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'}`}>Benchmark Concurrents</button>
-                 <button onClick={() => setResultTab('content')} className={`shrink-0 flex-1 px-6 py-3 rounded-xl text-sm font-black transition-all ${resultTab === 'content' ? 'bg-white shadow-sm text-rose-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'}`}>Générateur & Vidéos</button>
               </div>
 
               {/* Audit & Notes Section */}
@@ -1756,6 +1735,67 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {/* Bottom Floating Navigation */}
+      <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
+        <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 p-2 rounded-[32px] shadow-2xl flex items-center justify-between font-sans pointer-events-auto">
+           <button 
+             onClick={() => { setAppTab('search'); setResult(null); }} 
+             className={`flex flex-col items-center gap-1 min-w-[72px] px-2 py-2 rounded-[24px] transition-all ${appTab === 'search' && !result ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+           >
+             <Search size={22} className={appTab === 'search' && !result ? 'stroke-[2.5px]' : ''} />
+             <span className="text-[10px] font-bold">Nouveau</span>
+           </button>
+           
+           {result && appTab === 'search' && (
+             <>
+               <div className="w-px h-8 bg-white/10 mx-1"></div>
+               
+               <button 
+                 onClick={() => setResultTab('overview')} 
+                 className={`flex flex-col items-center gap-1 min-w-[72px] px-2 py-2 rounded-[24px] transition-all ${resultTab === 'overview' ? 'bg-[#25F4EE]/20 text-[#25F4EE]' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+               >
+                 <Activity size={22} className={resultTab === 'overview' ? 'stroke-[2.5px]' : ''} />
+                 <span className="text-[10px] font-bold">Global</span>
+               </button>
+               
+               <button 
+                 onClick={() => setResultTab('audit')} 
+                 className={`flex flex-col items-center gap-1 min-w-[72px] px-2 py-2 rounded-[24px] transition-all ${resultTab === 'audit' ? 'bg-fuchsia-500/20 text-fuchsia-400' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+               >
+                 <Eye size={22} className={resultTab === 'audit' ? 'stroke-[2.5px]' : ''} />
+                 <span className="text-[10px] font-bold">Audit</span>
+               </button>
+               
+               <button 
+                 onClick={() => setResultTab('benchmark')} 
+                 className={`flex flex-col items-center gap-1 min-w-[72px] px-2 py-2 rounded-[24px] transition-all ${resultTab === 'benchmark' ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+               >
+                 <Swords size={22} className={resultTab === 'benchmark' ? 'stroke-[2.5px]' : ''} />
+                 <span className="text-[10px] font-bold">Rivaux</span>
+               </button>
+               
+               <button 
+                 onClick={() => setResultTab('content')} 
+                 className={`flex flex-col items-center gap-1 min-w-[72px] px-2 py-2 rounded-[24px] transition-all ${resultTab === 'content' ? 'bg-rose-500/20 text-rose-400' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+               >
+                 <Lightbulb size={22} className={resultTab === 'content' ? 'stroke-[2.5px]' : ''} />
+                 <span className="text-[10px] font-bold">Idées</span>
+               </button>
+             </>
+           )}
+
+           <div className="w-px h-8 bg-white/10 mx-1"></div>
+
+           <button 
+             onClick={() => setAppTab('history')} 
+             className={`flex flex-col items-center gap-1 min-w-[72px] px-2 py-2 rounded-[24px] transition-all ${appTab === 'history' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+           >
+             <Clock size={22} className={appTab === 'history' ? 'stroke-[2.5px]' : ''} />
+             <span className="text-[10px] font-bold">Historique</span>
+           </button>
+        </div>
+      </div>
     </div>
   );
 }
