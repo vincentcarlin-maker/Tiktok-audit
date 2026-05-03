@@ -8,7 +8,8 @@ import { AnalysisResult } from './types';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { analyzeTikTokProfile } from './services/tiktokService';
 
-function formatNumber(num: number): string {
+function formatNumber(num: number | undefined | null): string {
+  if (num === undefined || num === null) return '0';
   if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
   if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
   return num.toString();
@@ -356,8 +357,8 @@ export default function App() {
     setError(null);
 
     try {
-      const { data, quota } = await analyzeTikTokProfile(username, false);
-      setResult(data as any);
+      const { data, quota, source } = await analyzeTikTokProfile(username, false);
+      setResult({ data, source, insights: [] } as any);
       if (quota) {
         setKeysStatus(prev => {
           const filtered = prev.filter(k => k.key !== quota.key);
