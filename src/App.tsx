@@ -86,7 +86,17 @@ export default function App() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [isExportingMediaKit, setIsExportingMediaKit] = useState(false);
-  const [keysStatus, setKeysStatus] = useState<any[]>([]);
+  const [keysStatus, setKeysStatus] = useState<any[]>(() => {
+    // Initialize with all keys masked
+    const rawKeys = ((import.meta as any).env.VITE_RAPIDAPI_KEY) || 'b3b8244ea2msh4e2b733bb238abdp116a59jsn2bb022c66151';
+    const split = rawKeys.split(',').map((k: string) => k.trim()).filter((k: string) => k.length > 0);
+    return split.map(k => ({
+      key: k.slice(0, 4) + '...' + k.slice(-4),
+      remaining: -1,
+      limit: -1,
+      lastUsed: 0
+    }));
+  });
   const [showKeysStatus, setShowKeysStatus] = useState(false);
 
   const POPULAR_ACCOUNTS = [
@@ -197,6 +207,7 @@ export default function App() {
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
+        allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
         onclone: (clonedDoc) => {
@@ -206,7 +217,7 @@ export default function App() {
           if (container) {
             container.style.position = 'static';
             container.style.left = '0';
-            container.style.pointerEvents = 'auto';
+            container.style.opacity = '1';
             container.style.display = 'block';
           }
         }
@@ -219,11 +230,22 @@ export default function App() {
       
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
       const fileName = `MediaKit_${result.data.username}.pdf`;
-      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-        // Special handling for iOS Safari
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      
+      if (isIOS) {
+        // Special handling for iOS Safari - create a temporary link and trigger it
         const blob = pdf.output('blob');
         const url = URL.createObjectURL(blob);
-        window.location.href = url;
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.click();
+        // Fallback if click doesn't work in some iframe contexts
+        setTimeout(() => {
+          if (window.confirm("Ouvrir le PDF ?")) {
+            window.location.href = url;
+          }
+        }, 100);
       } else {
         pdf.save(fileName);
       }
@@ -254,6 +276,7 @@ export default function App() {
       const canvas = await html2canvas(element, { 
         scale: 2, 
         useCORS: true, 
+        allowTaint: true,
         backgroundColor: '#f8fafc',
         logging: false,
         width: element.scrollWidth,
@@ -284,11 +307,21 @@ export default function App() {
       }
 
       const fileName = `audit_${result.data.profile.nickname || 'tiktok'}_${new Date().toISOString().split('T')[0]}.pdf`;
-      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      
+      if (isIOS) {
         // Special handling for iOS Safari
         const blob = pdf.output('blob');
         const url = URL.createObjectURL(blob);
-        window.location.href = url;
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.click();
+        setTimeout(() => {
+          if (window.confirm("Ouvrir l'audit PDF ?")) {
+            window.location.href = url;
+          }
+        }, 100);
       } else {
         pdf.save(fileName);
       }
@@ -360,10 +393,11 @@ export default function App() {
       const { data, quota, source } = await analyzeTikTokProfile(username, false);
       setResult({ data, source, insights: [] } as any);
       if (quota && (quota as any).key) {
-        setKeysStatus(prev => {
-          const filtered = prev.filter(k => k.key !== (quota as any).key);
-          return [{ ...quota, lastUsed: Date.now() }, ...filtered].slice(0, 5);
-        });
+        setKeysStatus(prev => prev.map(k => 
+          k.key === (quota as any).key 
+            ? { ...quota, lastUsed: Date.now() } 
+            : k
+        ));
       }
       saveToHistory(username);
     } catch (err: any) {
@@ -427,16 +461,22 @@ export default function App() {
                               <div className={`w-2 h-2 rounded-full ${ks.remaining > 10 ? 'bg-emerald-500 animate-pulse' : ks.remaining > 0 ? 'bg-amber-500' : 'bg-red-500'}`}></div>
                             </div>
                             <div className="flex items-end justify-between gap-1 mb-1">
-                               <span className="text-lg font-black text-slate-900 leading-none">{ks.remaining}</span>
-                               <span className="text-[10px] font-bold text-slate-400 pb-0.5">/ {ks.limit}</span>
+                               <span className="text-lg font-black text-slate-900 leading-none">
+                                 {ks.remaining === -1 ? '?' : ks.remaining}
+                               </span>
+                               <span className="text-[10px] font-bold text-slate-400 pb-0.5">
+                                 / {ks.limit === -1 ? '?' : ks.limit}
+                               </span>
                             </div>
                             <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
                                <div 
-                                 className={`h-full transition-all duration-1000 ${ks.remaining > 10 ? 'bg-emerald-500' : ks.remaining > 0 ? 'bg-amber-500' : 'bg-red-500'}`}
-                                 style={{ width: `${(ks.remaining / ks.limit) * 100}%` }}
+                                 className={`h-full transition-all duration-1000 ${ks.remaining === -1 ? 'bg-slate-300' : ks.remaining > 10 ? 'bg-emerald-500' : ks.remaining > 0 ? 'bg-amber-500' : 'bg-red-500'}`}
+                                 style={{ width: ks.remaining === -1 ? '0%' : `${(ks.remaining / ks.limit) * 100}%` }}
                                />
                             </div>
-                            <p className="text-[9px] text-slate-400 mt-2 font-medium">Dernier usage: {new Date(ks.lastUsed).toLocaleTimeString()}</p>
+                            <p className="text-[9px] text-slate-400 mt-2 font-medium">
+                              {ks.lastUsed > 0 ? `Dernier usage: ${new Date(ks.lastUsed).toLocaleTimeString()}` : 'Pas encore utilisée'}
+                            </p>
                           </div>
                         ))}
                       </div>

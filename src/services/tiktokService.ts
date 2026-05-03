@@ -67,15 +67,28 @@ export const analyzeTikTokProfile = async (username: string, isDemo: boolean = f
             }
           });
 
-          // Extract quota headers
-          const remaining = response.headers.get('x-ratelimit-requests-remaining');
-          const limit = response.headers.get('x-ratelimit-requests-limit');
+          // Extract quota headers - handle various RapidAPI header formats
+          const remaining = response.headers.get('x-ratelimit-requests-remaining') || 
+                            response.headers.get('x-ratelimit-remaining') ||
+                            response.headers.get('ratelimit-remaining');
+          const limit = response.headers.get('x-ratelimit-requests-limit') || 
+                        response.headers.get('x-ratelimit-limit') ||
+                        response.headers.get('ratelimit-limit');
           
-          quotaInfo = { 
-            remaining: remaining ? parseInt(remaining) : 100, 
-            limit: limit ? parseInt(limit) : 100,
-            key: currentKey.slice(0, 4) + '...' + currentKey.slice(-4)
-          };
+          if (remaining !== null || limit !== null) {
+            quotaInfo = { 
+              remaining: remaining !== null ? parseInt(remaining) : -1, 
+              limit: limit !== null ? parseInt(limit) : -1,
+              key: currentKey.slice(0, 4) + '...' + currentKey.slice(-4)
+            };
+          } else {
+            // Fallback for keys that don't return headers but worked
+            quotaInfo = { 
+              remaining: -1, // Use -1 to indicate active but unknown quota
+              limit: -1,
+              key: currentKey.slice(0, 4) + '...' + currentKey.slice(-4)
+            };
+          }
 
           if (response.ok) {
             const data = await response.json();
