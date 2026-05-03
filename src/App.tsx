@@ -1729,8 +1729,8 @@ export default function App() {
                             <p className="text-sm font-medium text-slate-500">{analysis.data.profile.nickname}</p>
                           </div>
                         </div>
-                        <div className={`px-3 py-1 text-xs font-bold rounded-full ${analysis.data.viralityScore > 70 ? 'bg-fuchsia-50 text-fuchsia-700' : 'bg-slate-100 text-slate-600'}`}>
-                           {analysis.data.viralityScore}/100 Virality
+                        <div className={`px-3 py-1 text-xs font-bold rounded-full ${(analysis.data.viralityScore || 0) > 70 ? 'bg-fuchsia-50 text-fuchsia-700' : 'bg-slate-100 text-slate-600'}`}>
+                           {analysis.data.viralityScore || 0}/100 Virality
                         </div>
                       </div>
                       
@@ -1745,7 +1745,7 @@ export default function App() {
                         </div>
                         <div className="bg-slate-50 p-3 rounded-2xl text-center">
                            <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Rev / mois</p>
-                           <p className="text-sm font-black text-slate-900">{analysis.data.revenueInfo.monthly[0]}€</p>
+                           <p className="text-sm font-black text-slate-900">{formatNumber(analysis.data.estimatedRevenue || 0)}€</p>
                         </div>
                       </div>
                     </div>
