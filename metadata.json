@@ -1,0 +1,6 @@
+{
+  "name": "TikTok Analyzer",
+  "description": "Analyseur de compte TikTok avec statistiques, engagement et recommandations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
