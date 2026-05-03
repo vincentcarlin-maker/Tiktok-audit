@@ -29,7 +29,7 @@ export interface AnalysisResult {
   audienceLoyalty: number;
 }
 
-export const analyzeTikTokProfile = async (username: string, isDemo: boolean = false): Promise<{ data: AnalysisResult; source: string }> => {
+export const analyzeTikTokProfile = async (username: string, isDemo: boolean = false): Promise<{ data: AnalysisResult; source: string; quota?: { limit: number; remaining: number; reset?: number } }> => {
   const cleanUsername = username.replace('@', '');
   
   // Use VITE_ prefix for keys in frontend
@@ -38,6 +38,7 @@ export const analyzeTikTokProfile = async (username: string, isDemo: boolean = f
   
   let profileData: any = null;
   let source = 'ai-estimation';
+  let quotaInfo: any = undefined;
 
   if (!isDemo && rapidApiKeys.length > 0) {
     for (let kIndex = 0; kIndex < rapidApiKeys.length; kIndex++) {
@@ -64,6 +65,17 @@ export const analyzeTikTokProfile = async (username: string, isDemo: boolean = f
               'x-rapidapi-host': endpoint.host
             }
           });
+
+          // Extract quota headers
+          const remaining = response.headers.get('x-ratelimit-requests-remaining');
+          const limit = response.headers.get('x-ratelimit-requests-limit');
+          if (remaining && limit) {
+             quotaInfo = { 
+               remaining: parseInt(remaining), 
+               limit: parseInt(limit),
+               key: currentKey.slice(0, 4) + '...' + currentKey.slice(-4)
+             };
+          }
 
           if (response.ok) {
             const data = await response.json();
@@ -308,5 +320,5 @@ export const analyzeTikTokProfile = async (username: string, isDemo: boolean = f
     profileData.bestPostTime = `${days[d.getDay()]} à ${d.getHours()}h`;
   }
 
-  return { data: profileData, source };
+  return { data: profileData, source, quota: quotaInfo };
 };

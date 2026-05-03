@@ -85,6 +85,8 @@ export default function App() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [isExportingMediaKit, setIsExportingMediaKit] = useState(false);
+  const [keysStatus, setKeysStatus] = useState<any[]>([]);
+  const [showKeysStatus, setShowKeysStatus] = useState(false);
 
   const POPULAR_ACCOUNTS = [
     'khaby.lame', 'charlidamelio', 'mrbeast', 'bellapoarch', 'addisonre', 
@@ -215,7 +217,15 @@ export default function App() {
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-      pdf.save(`MediaKit_${result.data.username}.pdf`);
+      const fileName = `MediaKit_${result.data.username}.pdf`;
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        // Special handling for iOS Safari
+        const blob = pdf.output('blob');
+        const url = URL.createObjectURL(blob);
+        window.location.href = url;
+      } else {
+        pdf.save(fileName);
+      }
     } catch (error) {
       console.error("Error generating Media Kit:", error);
       alert("Une erreur est survenue lors de la génération du Media Kit.");
@@ -273,7 +283,14 @@ export default function App() {
       }
 
       const fileName = `audit_${result.data.profile.nickname || 'tiktok'}_${new Date().toISOString().split('T')[0]}.pdf`;
-      pdf.save(fileName);
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        // Special handling for iOS Safari
+        const blob = pdf.output('blob');
+        const url = URL.createObjectURL(blob);
+        window.location.href = url;
+      } else {
+        pdf.save(fileName);
+      }
     } catch (err) {
       console.error('Error generating PDF', err);
       alert("Erreur lors de la génération du PDF. Veuillez réessayer.");
@@ -339,8 +356,14 @@ export default function App() {
     setError(null);
 
     try {
-      const data = await analyzeTikTokProfile(username, false);
+      const { data, quota } = await analyzeTikTokProfile(username, false);
       setResult(data as any);
+      if (quota) {
+        setKeysStatus(prev => {
+          const filtered = prev.filter(k => k.key !== quota.key);
+          return [{ ...quota, lastUsed: Date.now() }, ...filtered].slice(0, 5);
+        });
+      }
       saveToHistory(username);
     } catch (err: any) {
       setError(err.message);
@@ -370,16 +393,69 @@ export default function App() {
               </button>
             </nav>
 
+            <div className="relative ml-2 sm:ml-4">
+              <button 
+                onClick={() => setShowKeysStatus(!showKeysStatus)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${keysStatus.length > 0 ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+              >
+                <Activity size={12} />
+                <span className="hidden xs:inline">Statut API</span>
+              </button>
+
+              <AnimatePresence>
+                {showKeysStatus && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute top-full right-0 mt-2 w-64 bg-white border border-slate-200 rounded-3xl shadow-2xl p-4 z-[100]"
+                  >
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center justify-between">
+                      Quotas RapidAPI
+                      <Activity size={12} className="text-indigo-500" />
+                    </h3>
+                    
+                    {keysStatus.length === 0 ? (
+                      <p className="text-xs text-slate-400 text-center py-4 font-medium italic">Aucune donnée encore. Lancez un audit pour vérifier les quotas.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {keysStatus.map((ks) => (
+                          <div key={ks.key} className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-[10px] font-mono font-bold text-slate-500">Clé: {ks.key}</span>
+                              <div className={`w-2 h-2 rounded-full ${ks.remaining > 10 ? 'bg-emerald-500 animate-pulse' : ks.remaining > 0 ? 'bg-amber-500' : 'bg-red-500'}`}></div>
+                            </div>
+                            <div className="flex items-end justify-between gap-1 mb-1">
+                               <span className="text-lg font-black text-slate-900 leading-none">{ks.remaining}</span>
+                               <span className="text-[10px] font-bold text-slate-400 pb-0.5">/ {ks.limit}</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                               <div 
+                                 className={`h-full transition-all duration-1000 ${ks.remaining > 10 ? 'bg-emerald-500' : ks.remaining > 0 ? 'bg-amber-500' : 'bg-red-500'}`}
+                                 style={{ width: `${(ks.remaining / ks.limit) * 100}%` }}
+                               />
+                            </div>
+                            <p className="text-[9px] text-slate-400 mt-2 font-medium">Dernier usage: {new Date(ks.lastUsed).toLocaleTimeString()}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <div className="flex items-center gap-2 sm:gap-3">
               {result && !loading && (
                 <>
                   <button 
                    onClick={exportMediaKit}
                   disabled={isExportingMediaKit}
-                  className="hidden md:flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 shadow-sm"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 shadow-sm"
+                  title="Media Kit"
                 >
                   {isExportingMediaKit ? <Loader2 size={14} className="animate-spin" /> : <Star size={14} />}
-                  Media Kit
+                  <span className="hidden sm:inline">Media Kit</span>
                 </button>
                  <button 
                    onClick={exportPDF}
