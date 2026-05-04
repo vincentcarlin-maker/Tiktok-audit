@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
-import { Search, Loader2, TrendingUp, Users, Heart, Video, AlertCircle, Info, Download, ExternalLink, MessageCircle, Share2, Calendar, MapPin, Hash, Clock, Swords, Trash2, Activity, Star, Zap, Euro, Check, CheckCircle, X, AlertTriangle, Award, Eye, Lightbulb, PenTool, Megaphone, PlaySquare } from 'lucide-react';
+import { Search, Loader2, TrendingUp, Users, Heart, Video, AlertCircle, Info, Download, ExternalLink, MessageCircle, Share2, Calendar, MapPin, Hash, Clock, Swords, Trash2, Activity, Star, Zap, Euro, Check, CheckCircle, X, AlertTriangle, Award, Eye, Lightbulb, PenTool, Megaphone, PlaySquare, RefreshCw } from 'lucide-react';
 
 import { motion, AnimatePresence } from 'motion/react';
 import { AnalysisResult } from './types';
@@ -417,16 +417,25 @@ export default function App() {
   }, [result]);
 
 
+  const handleRefresh = () => {
+    if (result && result.data && result.data.username) {
+      setUsername(result.data.username);
+      handleSearch(null as any, true);
+    }
+  };
+
   const handleSearch = async (e: React.FormEvent, forceRefresh = false) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!username.trim()) return;
 
     const cleanName = username.toLowerCase().replace('@', '').trim();
 
+    // If it's NOT a forced refresh AND we have it in cache, just show it
     if (!forceRefresh && savedAnalyses[cleanName]) {
       setResult(savedAnalyses[cleanName]);
       setAppTab('search');
       setResultTab('overview');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -434,6 +443,7 @@ export default function App() {
     setError(null);
 
     try {
+      // isDemo should be false to try real API keys. If keys fail, the service returns mock data anyway.
       const { data, quota, source } = await analyzeTikTokProfile(username, false);
       const newResult = { data, source, insights: [] } as any;
       setResult(newResult);
@@ -446,6 +456,8 @@ export default function App() {
       }
       saveToHistory(username, newResult);
       setAppTab('search');
+      setResultTab('overview');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -771,11 +783,12 @@ export default function App() {
             </div>
                 <div className="flex flex-col sm:flex-row items-center gap-3 mt-6 sm:mt-0 print:hidden">
                   <button 
-                    onClick={() => alert("La fonctionnalité de comparaison sera bientôt disponible ! ⚔️")}
-                    className="px-6 py-3 bg-[#FE2C55] text-white font-bold rounded-[24px] hover:bg-[#e0264b] transition-colors flex items-center gap-2"
+                    onClick={handleRefresh}
+                    disabled={loading}
+                    className="px-6 py-3 bg-slate-100 text-slate-800 font-bold rounded-[24px] hover:bg-slate-200 transition-colors flex items-center gap-2 disabled:opacity-50"
                   >
-                    <Swords size={18} />
-                    Comparateur
+                    {loading ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />}
+                    Actualiser
                   </button>
                   <button 
                     onClick={exportCSV}
