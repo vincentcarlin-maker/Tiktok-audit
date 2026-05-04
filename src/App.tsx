@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
-import { Search, Loader2, TrendingUp, Users, Heart, Video, AlertCircle, Info, Download, ExternalLink, MessageCircle, Share2, Calendar, MapPin, Hash, Clock, Swords, Trash2, Activity, Star, Zap, Euro, Check, CheckCircle, X, AlertTriangle, Award, Eye, Lightbulb, PenTool, Megaphone, PlaySquare, RefreshCw } from 'lucide-react';
+import { Search, Loader2, TrendingUp, Users, Heart, Video, AlertCircle, Info, Download, ExternalLink, MessageCircle, Share2, Calendar, MapPin, Hash, Clock, Swords, Trash2, Activity, Star, Zap, Euro, Check, CheckCircle, X, AlertTriangle, Award, Eye, Lightbulb, PenTool, Megaphone, PlaySquare, RefreshCw, Sparkles } from 'lucide-react';
 
 import { motion, AnimatePresence } from 'motion/react';
 import { AnalysisResult } from './types';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { analyzeTikTokProfile } from './services/tiktokService';
+import { getAIRecommendations } from './services/aiService';
 
 function formatNumber(num: number | undefined | null): string {
   if (num === undefined || num === null) return '0';
@@ -80,7 +81,8 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [appTab, setAppTab] = useState<'search' | 'history'>('search');
-  const [resultTab, setResultTab] = useState<'overview' | 'audit' | 'benchmark' | 'content'>('overview');
+  const [resultTab, setResultTab] = useState<'overview' | 'audit' | 'benchmark' | 'content' | 'insights'>('overview');
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [savedAnalyses, setSavedAnalyses] = useState<Record<string, AnalysisResult>>({});
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'recent' | 'views' | 'likes' | 'comments'>('recent');
@@ -421,6 +423,37 @@ export default function App() {
     if (result && result.data && result.data.username) {
       setUsername(result.data.username);
       handleSearch(null as any, true);
+    }
+  };
+  
+  const handleAIAnalysis = async () => {
+    if (!result || !result.data) return;
+    setIsGeneratingAI(true);
+    try {
+      const aiResult = await getAIRecommendations(result.data);
+      setResult(prev => {
+        if (!prev) return null;
+        const updated = {
+          ...prev,
+          data: {
+            ...prev.data,
+            aiInsights: {
+              ...aiResult,
+              isGenerated: true
+            }
+          }
+        };
+        // Save to history too
+        if (prev.data.username) {
+          saveToHistory(prev.data.username, updated);
+        }
+        return updated;
+      });
+      setResultTab('insights');
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsGeneratingAI(false);
     }
   };
 
@@ -1032,6 +1065,111 @@ export default function App() {
                        ))}
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* IA Insights Section */}
+              {resultTab === 'insights' && (
+                <div className="max-w-4xl mx-auto mt-6 mb-6">
+                  {result.data.aiInsights?.isGenerated ? (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="space-y-8"
+                    >
+                      <div className="bg-gradient-to-br from-indigo-900 to-indigo-950 rounded-[40px] p-8 text-white shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-10">
+                          <Sparkles size={120} />
+                        </div>
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-6 flex items-center gap-2">
+                           <Sparkles size={16} />
+                           Analyse Stratégique IA
+                        </h3>
+                        <p className="text-xl font-bold leading-relaxed mb-8">{result.data.aiInsights.summary}</p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                           <div className="bg-white/5 p-6 rounded-3xl border border-white/10">
+                              <p className="text-[10px] font-black uppercase text-emerald-400 mb-4 tracking-widest flex items-center gap-2">
+                                <CheckCircle size={14} /> Vos points forts
+                              </p>
+                              <ul className="space-y-3">
+                                {result.data.aiInsights.strengths.map((s, i) => (
+                                  <li key={i} className="text-sm font-medium flex items-start gap-2">
+                                    <span className="text-emerald-400 mt-1">•</span> {s}
+                                  </li>
+                                ))}
+                              </ul>
+                           </div>
+                           <div className="bg-white/5 p-6 rounded-3xl border border-white/10">
+                              <p className="text-[10px] font-black uppercase text-rose-400 mb-4 tracking-widest flex items-center gap-2">
+                                <AlertTriangle size={14} /> Vos points faibles
+                              </p>
+                              <ul className="space-y-3">
+                                {result.data.aiInsights.weaknesses.map((w, i) => (
+                                  <li key={i} className="text-sm font-medium flex items-start gap-2">
+                                    <span className="text-rose-400 mt-1">•</span> {w}
+                                  </li>
+                                ))}
+                              </ul>
+                           </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white border border-slate-100 rounded-[40px] p-8 shadow-sm">
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
+                           <TrendingUp size={16} className="text-indigo-500" />
+                           Plan de Croissance Personnalisé
+                        </h3>
+                        <div className="space-y-4">
+                           {result.data.aiInsights.growthPlan.map((step, i) => (
+                             <div key={i} className="flex items-center gap-4 bg-slate-50 p-5 rounded-3xl group hover:bg-indigo-50 transition-colors">
+                                <div className="w-10 h-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center font-black text-slate-900 shadow-sm group-hover:border-indigo-200">
+                                   {i + 1}
+                                </div>
+                                <p className="text-sm font-bold text-slate-800">{step}</p>
+                             </div>
+                           ))}
+                        </div>
+                      </div>
+
+                      <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 rounded-[40px] p-8">
+                         <h3 className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-6 flex items-center gap-2">
+                            <Lightbulb size={16} />
+                            Idées de Contenu Viral (Par l'IA)
+                         </h3>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {result.data.aiInsights.contentIdeas.map((idea, i) => (
+                              <div key={i} className="bg-white p-6 rounded-3xl shadow-sm border border-amber-200/50">
+                                 <h4 className="font-black text-slate-900 mb-3">{idea.title}</h4>
+                                 <div className="bg-amber-100/50 p-3 rounded-2xl mb-3">
+                                    <p className="text-[9px] font-black uppercase text-amber-700 mb-1">Accroche (Hook)</p>
+                                    <p className="text-xs font-bold text-amber-900 italic">"{idea.hook}"</p>
+                                 </div>
+                                 <p className="text-xs text-slate-600 leading-relaxed font-medium">{idea.description}</p>
+                              </div>
+                            ))}
+                         </div>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <div className="bg-white border border-slate-100 rounded-[40px] p-12 text-center shadow-sm">
+                       <div className="w-20 h-20 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                          <Sparkles size={40} className={isGeneratingAI ? 'animate-pulse' : ''} />
+                       </div>
+                       <h3 className="text-2xl font-black text-slate-900 mb-2">Analyse Stratégique IA</h3>
+                       <p className="text-slate-500 font-medium max-w-sm mx-auto mb-8">
+                         Laissez notre IA analyser vos données pour créer un plan de croissance sur mesure et de nouvelles idées de vidéos.
+                       </p>
+                       <button 
+                         onClick={handleAIAnalysis}
+                         disabled={isGeneratingAI}
+                         className="px-8 py-4 bg-slate-900 text-white font-bold rounded-[32px] hover:bg-indigo-600 transition-all flex items-center gap-3 mx-auto disabled:opacity-50 shadow-xl shadow-indigo-100"
+                       >
+                         {isGeneratingAI ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
+                         {isGeneratingAI ? 'Analyse en cours...' : 'Générer l\'analyse IA'}
+                       </button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1777,6 +1915,14 @@ export default function App() {
                >
                  <Lightbulb size={20} className={resultTab === 'content' ? 'stroke-[2.5px]' : ''} />
                  <span className="text-[9px] font-bold">Idées</span>
+               </button>
+
+               <button 
+                 onClick={() => setResultTab('insights')} 
+                 className={`flex flex-col items-center gap-0.5 min-w-[60px] px-1 py-1.5 rounded-[24px] transition-all ${resultTab === 'insights' ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+               >
+                 <Sparkles size={20} className={resultTab === 'insights' ? 'stroke-[2.5px]' : ''} />
+                 <span className="text-[9px] font-bold">IA</span>
                </button>
              </>
            )}

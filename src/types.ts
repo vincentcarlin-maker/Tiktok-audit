@@ -95,6 +95,18 @@ export interface AnalysisResult {
         format: string;
       }[];
     };
+    aiInsights?: {
+      summary: string;
+      strengths: string[];
+      weaknesses: string[];
+      growthPlan: string[];
+      contentIdeas: {
+        title: string;
+        hook: string;
+        description: string;
+      }[];
+      isGenerated: boolean;
+    };
   };
   insights: string[];
 }
