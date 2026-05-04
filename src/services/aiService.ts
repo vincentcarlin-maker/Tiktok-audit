@@ -28,27 +28,30 @@ export interface AIInsights {
 export async function getAIRecommendations(profileData: any): Promise<AIInsights> {
   const ai = getAiClient();
   const prompt = `
-    En tant qu'expert TikTok, analyse ce profil et donne des recommandations stratégiques.
+    En tant qu'expert TikTok senior spécialisé en croissance virale, analyse ce profil et donne des recommandations stratégiques DÉTAILLÉES.
+    
+    IMPORTANT: Tu DOIS impérativement remplir TOUTES les sections du JSON. Ne laisse aucune liste vide.
+    Fournis au moins 5 points forts (strengths), 5 points faibles (weaknesses), 5 étapes de croissance (growthPlan) et 3 idées de contenu (contentIdeas).
     
     Données du profil:
     - Nom: ${profileData.profile.nickname}
     - Bio: ${profileData.profile.bio}
     - Followers: ${profileData.stats.followers}
-    - Engagement: ${profileData.stats.engagementRate}%
-    - Tops Hashtags: ${profileData.topHashtags?.map((t: any) => t.tag).join(', ')}
-    - Vidéos récentes (descriptions): ${profileData.videos?.slice(0, 5).map((v: any) => v.desc).join(' | ')}
+    - Engagement Rate: ${profileData.stats.engagementRate}%
+    - Tops Hashtags utilisés: ${profileData.topHashtags?.map((t: any) => t.tag).join(', ') || 'Non disponible'}
+    - Vidéos récentes (descriptions pour contexte): ${profileData.videos?.slice(0, 10).map((v: any) => v.desc).join(' | ') || 'Non disponible'}
     
-    Répond au format JSON suivant:
+    Répond UNIQUEMENT au format JSON structure suivant:
     {
-      "summary": "Résumé de la performance actuelle",
-      "strengths": ["Force 1", "Force 2"],
-      "weaknesses": ["Point à améliorer 1", "Point à améliorer 2"],
-      "growthPlan": ["Action 1", "Action 2", "Action 3"],
+      "summary": "Une analyse globale percutante de 3-4 phrases sur le potentiel du compte.",
+      "strengths": ["Analyse précise d'une force", "etc (min 5)"],
+      "weaknesses": ["Détection d'un point faible", "etc (min 5)"],
+      "growthPlan": ["Action concrète immédiate", "etc (min 5)"],
       "contentIdeas": [
         {
-          "title": "Titre de l'idée",
-          "hook": "L'accroche (hook) pour les 3 premières secondes",
-          "description": "Description du concept de la vidéo"
+          "title": "Concept accrocheur",
+          "hook": "L'accroche exacte",
+          "description": "Scénario complet"
         }
       ]
     }
@@ -63,27 +66,32 @@ export async function getAIRecommendations(profileData: any): Promise<AIInsights
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            summary: { type: Type.STRING },
-            strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
-            weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } },
-            growthPlan: { type: Type.ARRAY, items: { type: Type.STRING } },
+            summary: { type: Type.STRING, description: "Un résumé détaillé de la stratégie recommandée" },
+            strengths: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Liste d'au moins 3 points forts" },
+            weaknesses: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Liste d'au moins 3 points d'amélioration" },
+            growthPlan: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Un plan d'action en 5 étapes concrètes" },
             contentIdeas: {
               type: Type.ARRAY,
+              description: "3 idées de vidéos virales",
               items: {
                 type: Type.OBJECT,
                 properties: {
                   title: { type: Type.STRING },
                   hook: { type: Type.STRING },
                   description: { type: Type.STRING }
-                }
+                },
+                required: ["title", "hook", "description"]
               }
             }
-          }
+          },
+          required: ["summary", "strengths", "weaknesses", "growthPlan", "contentIdeas"]
         }
       }
     });
 
-    return JSON.parse(response.text);
+    console.log("Raw AI Response:", response.text);
+    const parsed = JSON.parse(response.text);
+    return parsed;
   } catch (error: any) {
     console.error("Gemini Error:", error);
     if (error.message?.includes('API key')) {
