@@ -225,23 +225,54 @@ export default function App() {
     }
   };
 
+  const handleDownload = (pdf: jsPDF, fileName: string) => {
+    try {
+      // In many environments (iframe, mobile), pdf.save() is unreliable
+      const blob = pdf.output('blob');
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      
+      // Keep in DOM long enough for click to register
+      setTimeout(() => {
+        document.body.removeChild(link);
+      }, 100);
+      
+      // Fallback for strict browsers/iframes
+      setTimeout(() => {
+        if (window.confirm("Le téléchargement n'a pas démarré ? Cliquez OK pour ouvrir le document dans un nouvel onglet.")) {
+          window.open(url, '_blank');
+        }
+        // Clean up URL object
+        setTimeout(() => URL.revokeObjectURL(url), 120000);
+      }, 2000);
+    } catch (e) {
+      console.error("Download failed, trying save():", e);
+      pdf.save(fileName);
+    }
+  };
+
   const exportMediaKit = async () => {
     const element = document.getElementById('media-kit-container');
     if (!result || !element) return;
     
     setIsExportingMediaKit(true);
     try {
-      // Force a desktop-like viewport for the capture
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
+        proxy: '/api/proxy-image',
         backgroundColor: '#ffffff',
-        logging: false,
-        width: 800, // Matching the w-[800px] class
+        logging: true,
+        width: 800,
         windowWidth: 800,
         onclone: (clonedDoc) => {
           normalizeOklch(clonedDoc);
-          // Ensure the media-kit-container is visible and correctly sized in the clone
           const container = clonedDoc.getElementById('media-kit-container');
           if (container) {
             container.style.position = 'relative';
@@ -263,36 +294,10 @@ export default function App() {
       
       pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
       const fileName = `MediaKit_${result.data.username}.pdf`;
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-      
-    if (isIOS) {
-        // Special handling for iOS Safari - creating a blob and using URL.createObjectURL
-        const blob = pdf.output('blob');
-        const url = URL.createObjectURL(blob);
-        
-        // Create an invisible link and click it
-        const link = document.createElement('a');
-        link.href = url;
-        link.target = '_blank';
-        link.download = fileName; // Try to force download
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // Fallback for some browsers/iframes
-        setTimeout(() => {
-          if (window.confirm("Le téléchargement n'a pas démarré ? Cliquez OK pour ouvrir le PDF dans un nouvel onglet.")) {
-            window.open(url, '_blank');
-          }
-          // Clean up URL object after some time
-          setTimeout(() => URL.revokeObjectURL(url), 60000);
-        }, 1500);
-      } else {
-        pdf.save(fileName);
-      }
+      handleDownload(pdf, fileName);
     } catch (error) {
       console.error("Error generating Media Kit:", error);
-      alert("Une erreur est survenue lors de la génération du Media Kit.");
+      alert("Une erreur est survenue lors de la génération du Media Kit. Certains visuels (images) peuvent bloquer l'export.");
     } finally {
       setIsExportingMediaKit(false);
     }
@@ -313,13 +318,13 @@ export default function App() {
     
     setIsExportingPDF(true);
     try {
-      // Force a fixed width for capture to prevent responsive alignment issues
       const captureWidth = 1200; 
       const canvas = await html2canvas(element, { 
-        scale: 1.5, // Reduced scale slightly for better performance on large audits
+        scale: 1.5,
         useCORS: true, 
+        proxy: '/api/proxy-image',
         backgroundColor: '#f8fafc',
-        logging: false,
+        logging: true,
         width: captureWidth,
         windowWidth: captureWidth,
         onclone: (clonedDoc) => {
@@ -354,31 +359,10 @@ export default function App() {
       }
 
       const fileName = `audit_${result.data.profile.nickname || 'tiktok'}_${new Date().toISOString().split('T')[0]}.pdf`;
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-      
-      if (isIOS) {
-        const blob = pdf.output('blob');
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.target = '_blank';
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        setTimeout(() => {
-          if (window.confirm("Ouvrir l'audit PDF dans un nouvel onglet ?")) {
-            window.open(url, '_blank');
-          }
-          setTimeout(() => URL.revokeObjectURL(url), 60000);
-        }, 1500);
-      } else {
-        pdf.save(fileName);
-      }
+      handleDownload(pdf, fileName);
     } catch (err) {
       console.error('Error generating PDF', err);
-      alert("Erreur lors de la génération du PDF. Veuillez réessayer.");
+      alert("Erreur lors de la génération du PDF. Les images ou la complexité du dashboard peuvent ralentir l'export.");
     } finally {
       setIsExportingPDF(false);
     }

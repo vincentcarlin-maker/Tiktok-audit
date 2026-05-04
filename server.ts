@@ -22,6 +22,31 @@ async function startServer() {
     res.json(sanitizedStatus);
   });
 
+  // Proxy for images to avoid CORS issues with html2canvas
+  app.get('/api/proxy-image', async (req, res) => {
+    const { url } = req.query;
+    if (!url || typeof url !== 'string') {
+      return res.status(400).send('URL is required');
+    }
+    
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
+      
+      const contentType = response.headers.get('content-type');
+      if (contentType) res.setHeader('content-type', contentType);
+      
+      // Add caching for performance
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      
+      const buffer = await response.arrayBuffer();
+      res.send(Buffer.from(buffer));
+    } catch (error) {
+      console.error('Error proxying image:', error);
+      res.status(500).send('Error proxying image');
+    }
+  });
+
   // API Route to analyze TikTok account
   app.post('/api/analyze', async (req, res) => {
     const { username } = req.body;
