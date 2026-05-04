@@ -1872,10 +1872,10 @@ export default function App() {
 
       {/* Bottom Floating Navigation */}
       <div className="fixed bottom-6 left-4 right-4 z-50 flex justify-center pointer-events-none">
-        <div className={`bg-slate-900/95 backdrop-blur-xl border border-white/10 p-1.5 rounded-[32px] shadow-2xl flex items-center font-sans pointer-events-auto transition-all duration-500 ease-out ${result ? 'max-w-lg w-full justify-between' : 'w-fit justify-center gap-2'}`}>
+        <div className={`bg-slate-900/95 backdrop-blur-xl border border-white/10 p-1 rounded-[32px] shadow-2xl flex items-center font-sans pointer-events-auto transition-all duration-500 ease-out ${result ? 'max-w-[min(640px,calc(100vw-32px))] w-full justify-evenly' : 'w-fit justify-center gap-2'}`}>
            <button 
              onClick={() => { setAppTab('search'); setResult(null); }} 
-             className={`flex flex-col items-center gap-0.5 min-w-[60px] px-1 py-1.5 rounded-[24px] transition-all ${appTab === 'search' && !result ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+             className={`flex flex-col items-center gap-0.5 min-w-[44px] px-0.5 py-1.5 rounded-[24px] transition-all ${appTab === 'search' && !result ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
            >
              <Search size={20} className={appTab === 'search' && !result ? 'stroke-[2.5px]' : ''} />
              <span className="text-[9px] font-bold">Nouveau</span>
@@ -1887,7 +1887,7 @@ export default function App() {
                
                <button 
                  onClick={() => setResultTab('overview')} 
-                 className={`flex flex-col items-center gap-0.5 min-w-[60px] px-1 py-1.5 rounded-[24px] transition-all ${resultTab === 'overview' ? 'bg-[#25F4EE]/20 text-[#25F4EE]' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+                 className={`flex flex-col items-center gap-0.5 min-w-[44px] px-0.5 py-1.5 rounded-[24px] transition-all ${resultTab === 'overview' ? 'bg-[#25F4EE]/20 text-[#25F4EE]' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
                >
                  <Activity size={20} className={resultTab === 'overview' ? 'stroke-[2.5px]' : ''} />
                  <span className="text-[9px] font-bold">Global</span>
@@ -1895,7 +1895,7 @@ export default function App() {
                
                <button 
                  onClick={() => setResultTab('audit')} 
-                 className={`flex flex-col items-center gap-0.5 min-w-[60px] px-1 py-1.5 rounded-[24px] transition-all ${resultTab === 'audit' ? 'bg-fuchsia-500/20 text-fuchsia-400' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+                 className={`flex flex-col items-center gap-0.5 min-w-[44px] px-0.5 py-1.5 rounded-[24px] transition-all ${resultTab === 'audit' ? 'bg-fuchsia-500/20 text-fuchsia-400' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
                >
                  <Eye size={20} className={resultTab === 'audit' ? 'stroke-[2.5px]' : ''} />
                  <span className="text-[9px] font-bold">Audit</span>
@@ -1903,7 +1903,7 @@ export default function App() {
                
                <button 
                  onClick={() => setResultTab('benchmark')} 
-                 className={`flex flex-col items-center gap-0.5 min-w-[60px] px-1 py-1.5 rounded-[24px] transition-all ${resultTab === 'benchmark' ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+                 className={`flex flex-col items-center gap-0.5 min-w-[44px] px-0.5 py-1.5 rounded-[24px] transition-all ${resultTab === 'benchmark' ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
                >
                  <Swords size={20} className={resultTab === 'benchmark' ? 'stroke-[2.5px]' : ''} />
                  <span className="text-[9px] font-bold">Rivaux</span>
@@ -1911,7 +1911,7 @@ export default function App() {
                
                <button 
                  onClick={() => setResultTab('content')} 
-                 className={`flex flex-col items-center gap-0.5 min-w-[60px] px-1 py-1.5 rounded-[24px] transition-all ${resultTab === 'content' ? 'bg-rose-500/20 text-rose-400' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+                 className={`flex flex-col items-center gap-0.5 min-w-[44px] px-0.5 py-1.5 rounded-[24px] transition-all ${resultTab === 'content' ? 'bg-rose-500/20 text-rose-400' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
                >
                  <Lightbulb size={20} className={resultTab === 'content' ? 'stroke-[2.5px]' : ''} />
                  <span className="text-[9px] font-bold">Idées</span>
@@ -1919,7 +1919,7 @@ export default function App() {
 
                <button 
                  onClick={() => setResultTab('insights')} 
-                 className={`flex flex-col items-center gap-0.5 min-w-[60px] px-1 py-1.5 rounded-[24px] transition-all ${resultTab === 'insights' ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+                 className={`flex flex-col items-center gap-0.5 min-w-[44px] px-0.5 py-1.5 rounded-[24px] transition-all ${resultTab === 'insights' ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
                >
                  <Sparkles size={20} className={resultTab === 'insights' ? 'stroke-[2.5px]' : ''} />
                  <span className="text-[9px] font-bold">IA</span>
@@ -1931,7 +1931,7 @@ export default function App() {
 
            <button 
              onClick={() => { setAppTab('history'); setResult(null); }} 
-             className={`flex flex-col items-center gap-0.5 min-w-[60px] px-1 py-1.5 rounded-[24px] transition-all ${appTab === 'history' && !result ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+             className={`flex flex-col items-center gap-0.5 min-w-[44px] px-0.5 py-1.5 rounded-[24px] transition-all ${appTab === 'history' && !result ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
            >
              <Clock size={20} className={appTab === 'history' && !result ? 'stroke-[2.5px]' : ''} />
              <span className="text-[9px] font-bold">Historique</span>
