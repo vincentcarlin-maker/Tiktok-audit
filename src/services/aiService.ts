@@ -1,6 +1,17 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+let _ai: GoogleGenAI | null = null;
+
+function getAiClient() {
+  if (!_ai) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("Clé API Gemini manquante. Veuillez l'ajouter dans les paramètres de l'application (Variables d'environnement) avec le nom GEMINI_API_KEY.");
+    }
+    _ai = new GoogleGenAI({ apiKey });
+  }
+  return _ai;
+}
 
 export interface AIInsights {
   summary: string;
@@ -15,6 +26,7 @@ export interface AIInsights {
 }
 
 export async function getAIRecommendations(profileData: any): Promise<AIInsights> {
+  const ai = getAiClient();
   const prompt = `
     En tant qu'expert TikTok, analyse ce profil et donne des recommandations stratégiques.
     
@@ -72,8 +84,11 @@ export async function getAIRecommendations(profileData: any): Promise<AIInsights
     });
 
     return JSON.parse(response.text);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini Error:", error);
-    throw new Error("Impossible de générer les recommandations IA pour le moment.");
+    if (error.message?.includes('API key')) {
+      throw new Error("Clé API Gemini manquante ou invalide. Vérifiez vos paramètres.");
+    }
+    throw new Error(`Erreur IA : ${error.message || "Impossible de générer les recommandations"}`);
   }
 }
