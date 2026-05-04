@@ -100,3 +100,61 @@ export async function getAIRecommendations(profileData: any): Promise<AIInsights
     throw new Error(`Erreur IA : ${error.message || "Impossible de générer les recommandations"}`);
   }
 }
+
+export interface GeneratedIdea {
+  title: string;
+  hook: string;
+  script: string;
+  cta: string;
+  format: string;
+}
+
+export async function generateAIContentIdeas(profileData: any): Promise<GeneratedIdea[]> {
+  const ai = getAiClient();
+  const prompt = `
+    En tant qu'expert en création de contenu TikTok SaaS et Personal Branding, génère 5 idées de vidéos PRÊTES À TOURNER pour ce profil.
+    
+    Données du profil:
+    - Nom: ${profileData.profile.nickname}
+    - Niche (hashtags): ${profileData.topHashtags?.map((t: any) => t.tag).join(', ') || 'SaaS / Tech'}
+    - Bio: ${profileData.profile.bio}
+    
+    Pour chaque idée, fournis :
+    1. Un titre accrocheur
+    2. Un Hook (accroche) puissant pour les 2 premières secondes
+    3. Un script détaillé (scénario) étape par étape
+    4. Un CTA (Call to action) efficace
+    5. Le format suggéré (ex: 'Storytime', 'Logiciel', 'Tutorial', 'POV')
+    
+    Répond UNIQUEMENT avec un tableau JSON d'objets.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              hook: { type: Type.STRING },
+              script: { type: Type.STRING },
+              cta: { type: Type.STRING },
+              format: { type: Type.STRING }
+            },
+            required: ["title", "hook", "script", "cta", "format"]
+          }
+        }
+      }
+    });
+
+    return JSON.parse(response.text);
+  } catch (error: any) {
+    console.error("Gemini Content Generation Error:", error);
+    throw new Error(`Impossible de générer les idées : ${error.message}`);
+  }
+}

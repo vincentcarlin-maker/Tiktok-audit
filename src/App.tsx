@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { AnalysisResult } from './types';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { analyzeTikTokProfile } from './services/tiktokService';
-import { getAIRecommendations } from './services/aiService';
+import { getAIRecommendations, generateAIContentIdeas } from './services/aiService';
 
 function formatNumber(num: number | undefined | null): string {
   if (num === undefined || num === null) return '0';
@@ -83,6 +83,7 @@ export default function App() {
   const [appTab, setAppTab] = useState<'search' | 'history'>('search');
   const [resultTab, setResultTab] = useState<'overview' | 'audit' | 'benchmark' | 'content' | 'insights'>('overview');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [savedAnalyses, setSavedAnalyses] = useState<Record<string, AnalysisResult>>({});
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'recent' | 'views' | 'likes' | 'comments'>('recent');
@@ -454,6 +455,35 @@ export default function App() {
       alert(err.message);
     } finally {
       setIsGeneratingAI(false);
+    }
+  };
+
+  const handleGenerateContent = async () => {
+    if (!result || !result.data) return;
+    setIsGeneratingContent(true);
+    try {
+      const ideas = await generateAIContentIdeas(result.data);
+      setResult(prev => {
+        if (!prev) return null;
+        const updated = {
+          ...prev,
+          data: {
+            ...prev.data,
+            contentGenerator: {
+              ideas: ideas
+            }
+          }
+        };
+        // Save to history too
+        if (prev.data.username) {
+          saveToHistory(prev.data.username, updated);
+        }
+        return updated;
+      });
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsGeneratingContent(false);
     }
   };
 
@@ -1032,31 +1062,41 @@ export default function App() {
               {resultTab === 'content' && result.data.contentGenerator && (
                 <div className="max-w-4xl mx-auto mt-6 mb-6">
                   <div className="bg-gradient-to-br from-fuchsia-50 to-pink-50 border border-fuchsia-100/50 rounded-[40px] p-8">
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-fuchsia-600 mb-6 flex items-center gap-2">
-                       <Lightbulb size={16} />
-                       Générateur de Contenu SaaS
-                    </h3>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                      <h3 className="text-[10px] font-black uppercase tracking-widest text-fuchsia-600 flex items-center gap-2">
+                         <Lightbulb size={16} />
+                         Générateur de Contenu IA (SaaS)
+                      </h3>
+                      <button 
+                        onClick={handleGenerateContent}
+                        disabled={isGeneratingContent}
+                        className="flex items-center gap-2 px-4 py-2 bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all disabled:opacity-50 shadow-sm shadow-fuchsia-100"
+                      >
+                        {isGeneratingContent ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                        {isGeneratingContent ? 'Génération...' : 'Générer de nouvelles idées'}
+                      </button>
+                    </div>
                     
                     <div className="space-y-6">
                        {result.data.contentGenerator.ideas.map((idea, index) => (
-                         <div key={index} className="bg-white p-6 rounded-3xl shadow-sm border border-fuchsia-100/50">
+                         <div key={index} className="bg-white p-6 rounded-3xl shadow-sm border border-fuchsia-100/50 flex flex-col relative overflow-hidden">
                             <div className="flex justify-between items-start mb-4">
-                              <h4 className="font-black text-lg text-slate-900">{idea.title}</h4>
-                              <span className="text-xs font-bold px-3 py-1 bg-fuchsia-100 text-fuchsia-700 rounded-full flex items-center gap-1"><PlaySquare size={12}/> {idea.format}</span>
+                              <h4 className="font-black text-lg text-slate-900 pr-12">{idea.title}</h4>
+                              <span className="text-xs font-bold px-3 py-1 bg-fuchsia-100 text-fuchsia-700 rounded-full flex items-center gap-1 shrink-0"><PlaySquare size={12}/> {idea.format}</span>
                             </div>
                             
                             <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                               <div className="bg-amber-50 p-4 rounded-2xl">
+                               <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100/50">
                                   <p className="text-[10px] font-black uppercase text-amber-600 tracking-wide mb-2 flex items-center gap-1.5"><Megaphone size={14}/> Accroche Fort (Hook)</p>
-                                  <p className="text-sm font-bold text-amber-900">"{idea.hook}"</p>
+                                  <p className="text-sm font-bold text-amber-900 italic">"{idea.hook}"</p>
                                </div>
                                
-                               <div className="bg-slate-50 p-4 rounded-2xl">
-                                  <p className="text-[10px] font-black uppercase text-slate-500 tracking-wide mb-2 flex items-center gap-1.5"><PenTool size={14}/> Script prêt à tourner</p>
-                                  <p className="text-sm font-medium text-slate-700 leading-relaxed whitespace-pre-line">{idea.script.replace(/\d\./g, '\n$&').trim()}</p>
+                               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                  <p className="text-[10px] font-black uppercase text-slate-500 tracking-wide mb-2 flex items-center gap-1.5"><PenTool size={14}/> Script complet</p>
+                                  <p className="text-sm font-medium text-slate-700 leading-relaxed whitespace-pre-line">{idea.script}</p>
                                </div>
                                
-                               <div className="bg-indigo-50 p-4 rounded-2xl">
+                               <div className="bg-indigo-50 p-4 rounded-2xl border border-indigo-100/50">
                                   <p className="text-[10px] font-black uppercase text-indigo-600 tracking-wide mb-2 flex items-center gap-1.5"><TrendingUp size={14}/> Call-To-Action (CTA)</p>
                                   <p className="text-sm font-bold text-indigo-900">"{idea.cta}"</p>
                                </div>
