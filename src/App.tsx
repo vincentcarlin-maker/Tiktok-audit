@@ -728,7 +728,7 @@ export default function App() {
 
         {/* Results Section */}
         <AnimatePresence>
-          {result && !loading && (
+          {result && !loading && appTab === 'search' && (
             <motion.div 
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1787,10 +1787,10 @@ export default function App() {
            <div className="w-px h-6 bg-white/10 mx-0.5"></div>
 
            <button 
-             onClick={() => setAppTab('history')} 
-             className={`flex flex-col items-center gap-0.5 min-w-[60px] px-1 py-1.5 rounded-[24px] transition-all ${appTab === 'history' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+             onClick={() => { setAppTab('history'); setResult(null); }} 
+             className={`flex flex-col items-center gap-0.5 min-w-[60px] px-1 py-1.5 rounded-[24px] transition-all ${appTab === 'history' && !result ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
            >
-             <Clock size={20} className={appTab === 'history' ? 'stroke-[2.5px]' : ''} />
+             <Clock size={20} className={appTab === 'history' && !result ? 'stroke-[2.5px]' : ''} />
              <span className="text-[9px] font-bold">Historique</span>
            </button>
         </div>
