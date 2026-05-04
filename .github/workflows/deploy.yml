@@ -30,7 +30,8 @@ jobs:
         run: npm run build
         env:
           VITE_RAPIDAPI_KEY: ${{ secrets.VITE_RAPIDAPI_KEY }}
-
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
