@@ -1085,7 +1085,7 @@ export default function App() {
                            <Sparkles size={16} />
                            Analyse Stratégique IA
                         </h3>
-                        <p className="text-xl font-bold leading-relaxed mb-8">{result.data.aiInsights.summary}</p>
+                        <p className="text-xl font-bold leading-relaxed mb-8">{result.data.aiInsights?.summary || "Analyse en chargement..."}</p>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                            <div className="bg-white/5 p-6 rounded-3xl border border-white/10">
@@ -1093,7 +1093,7 @@ export default function App() {
                                 <CheckCircle size={14} /> Vos points forts
                               </p>
                               <ul className="space-y-3">
-                                {result.data.aiInsights.strengths.map((s, i) => (
+                                {(result.data.aiInsights?.strengths || []).map((s, i) => (
                                   <li key={i} className="text-sm font-medium flex items-start gap-2">
                                     <span className="text-emerald-400 mt-1">•</span> {s}
                                   </li>
@@ -1105,7 +1105,7 @@ export default function App() {
                                 <AlertTriangle size={14} /> Vos points faibles
                               </p>
                               <ul className="space-y-3">
-                                {result.data.aiInsights.weaknesses.map((w, i) => (
+                                {(result.data.aiInsights?.weaknesses || []).map((w, i) => (
                                   <li key={i} className="text-sm font-medium flex items-start gap-2">
                                     <span className="text-rose-400 mt-1">•</span> {w}
                                   </li>
@@ -1121,7 +1121,7 @@ export default function App() {
                            Plan de Croissance Personnalisé
                         </h3>
                         <div className="space-y-4">
-                           {result.data.aiInsights.growthPlan.map((step, i) => (
+                           {(result.data.aiInsights?.growthPlan || []).map((step, i) => (
                              <div key={i} className="flex items-center gap-4 bg-slate-50 p-5 rounded-3xl group hover:bg-indigo-50 transition-colors">
                                 <div className="w-10 h-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center font-black text-slate-900 shadow-sm group-hover:border-indigo-200">
                                    {i + 1}
@@ -1138,7 +1138,7 @@ export default function App() {
                             Idées de Contenu Viral (Par l'IA)
                          </h3>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {result.data.aiInsights.contentIdeas.map((idea, i) => (
+                            {(result.data.aiInsights?.contentIdeas || []).map((idea, i) => (
                               <div key={i} className="bg-white p-6 rounded-3xl shadow-sm border border-amber-200/50">
                                  <h4 className="font-black text-slate-900 mb-3">{idea.title}</h4>
                                  <div className="bg-amber-100/50 p-3 rounded-2xl mb-3">
