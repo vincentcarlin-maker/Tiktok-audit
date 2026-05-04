@@ -1081,10 +1081,20 @@ export default function App() {
                         <div className="absolute top-0 right-0 p-8 opacity-10">
                           <Sparkles size={120} />
                         </div>
-                        <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-6 flex items-center gap-2">
-                           <Sparkles size={16} />
-                           Analyse Stratégique IA
-                        </h3>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                          <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
+                             <Sparkles size={16} />
+                             Analyse Stratégique IA
+                          </h3>
+                          <button 
+                            onClick={handleAIAnalysis}
+                            disabled={isGeneratingAI}
+                            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all disabled:opacity-50"
+                          >
+                            {isGeneratingAI ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+                            {isGeneratingAI ? 'Analyse...' : 'Refaire l\'analyse'}
+                          </button>
+                        </div>
                         <p className="text-xl font-bold leading-relaxed mb-8">{result.data.aiInsights?.summary || "Analyse en chargement..."}</p>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
