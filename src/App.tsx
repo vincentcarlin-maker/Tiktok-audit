@@ -5,7 +5,7 @@ import { Search, Loader2, TrendingUp, Users, Heart, Video, AlertCircle, Info, Do
 
 import { motion, AnimatePresence } from 'motion/react';
 import { AnalysisResult } from './types';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import { analyzeTikTokProfile } from './services/tiktokService';
 import { getAIRecommendations, generateAIContentIdeas } from './services/aiService';
 
@@ -1580,21 +1580,98 @@ export default function App() {
                   </div>
                 </div>
                 
-                {/* Recharts line chart */}
+                {/* Recharts area chart with dual axes */}
                 <div className="h-64 sm:h-80 w-full">
                   {result.data.chartData && result.data.chartData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={result.data.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <AreaChart 
+                        data={result.data.chartData} 
+                        margin={{ top: 10, right: 30, left: 10, bottom: 0 }}
+                      >
+                        <defs>
+                          <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#25F4EE" stopOpacity={0.4}/>
+                            <stop offset="95%" stopColor="#25F4EE" stopOpacity={0}/>
+                          </linearGradient>
+                          <linearGradient id="colorLikes" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#FE2C55" stopOpacity={0.4}/>
+                            <stop offset="95%" stopColor="#FE2C55" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 900 }} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 900 }} tickFormatter={formatNumber} />
-                        <Tooltip 
-                          contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }} 
-                          labelStyle={{ color: '#64748b', fontSize: '10px', textTransform: 'uppercase' }}
+                        <XAxis 
+                          dataKey="date" 
+                          axisLine={false} 
+                          tickLine={false} 
+                          tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 900 }} 
+                          dy={10}
+                          interval="preserveStartEnd"
+                          minTickGap={20}
                         />
-                        <Line type="monotone" dataKey="views" name="Vues" stroke="#25F4EE" strokeWidth={4} dot={{ r: 4, fill: '#25F4EE', strokeWidth: 0 }} activeDot={{ r: 6 }} />
-                        <Line type="monotone" dataKey="likes" name="Likes" stroke="#FE2C55" strokeWidth={4} dot={{ r: 4, fill: '#FE2C55', strokeWidth: 0 }} activeDot={{ r: 6 }} />
-                      </LineChart>
+                        <YAxis 
+                          yAxisId="left"
+                          axisLine={false} 
+                          tickLine={false} 
+                          tick={{ fontSize: 10, fill: '#25F4EE', fontWeight: 900 }} 
+                          tickFormatter={formatNumber}
+                          width={50}
+                        />
+                        <YAxis 
+                          yAxisId="right"
+                          orientation="right"
+                          axisLine={false} 
+                          tickLine={false} 
+                          tick={{ fontSize: 10, fill: '#FE2C55', fontWeight: 900 }} 
+                          tickFormatter={formatNumber}
+                          width={50}
+                        />
+                        <Tooltip 
+                          contentStyle={{ 
+                            borderRadius: '16px', 
+                            border: '1px solid #f1f5f9', 
+                            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', 
+                            fontWeight: 'bold',
+                            padding: '12px'
+                          }} 
+                          labelStyle={{ color: '#64748b', fontSize: '10px', textTransform: 'uppercase', marginBottom: '4px' }}
+                          itemStyle={{ fontSize: '12px', padding: '2px 0' }}
+                          formatter={(value: any) => [new Intl.NumberFormat('fr-FR').format(value), ""]}
+                        />
+                        <Legend 
+                          verticalAlign="top" 
+                          height={36} 
+                          iconType="circle"
+                          wrapperStyle={{ 
+                            fontSize: '10px', 
+                            fontWeight: 'bold', 
+                            textTransform: 'uppercase', 
+                            letterSpacing: '0.05em',
+                            paddingBottom: '20px'
+                          }}
+                        />
+                        <Area 
+                          yAxisId="left"
+                          type="monotone" 
+                          dataKey="views" 
+                          name="Vues" 
+                          stroke="#25F4EE" 
+                          strokeWidth={3}
+                          fillOpacity={1}
+                          fill="url(#colorViews)"
+                          activeDot={{ r: 6, strokeWidth: 0 }} 
+                        />
+                        <Area 
+                          yAxisId="right"
+                          type="monotone" 
+                          dataKey="likes" 
+                          name="Likes" 
+                          stroke="#FE2C55" 
+                          strokeWidth={3}
+                          fillOpacity={1}
+                          fill="url(#colorLikes)"
+                          activeDot={{ r: 6, strokeWidth: 0 }} 
+                        />
+                      </AreaChart>
                     </ResponsiveContainer>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm font-bold bg-slate-50 rounded-2xl">
