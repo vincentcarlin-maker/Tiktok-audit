@@ -105,6 +105,50 @@ export default function App() {
   });
   const [showKeysStatus, setShowKeysStatus] = useState(false);
 
+  const fetchKeysStatus = async () => {
+    try {
+      const res = await fetch('/api/keys-status');
+      if (res.ok) {
+        const data = await res.json();
+        // Return structured data for the frontend mapping
+        // We match it against the initialized keys if we want to show all keys
+        const rawKeys = ((import.meta as any).env.VITE_RAPIDAPI_KEY) || 'b3b8244ea2msh4e2b733bb238abdp116a59jsn2bb022c66151';
+        const split = rawKeys.split(',').map((k: string) => k.trim()).filter((k: string) => k.length > 0);
+        
+        const frontendMap = split.map(k => {
+          const masked = k.slice(0, 4) + '...' + k.slice(-4);
+          const serverData = data.find((d: any) => d.key === masked);
+          if (serverData) {
+            return {
+              key: masked,
+              limit: serverData.limit,
+              remaining: serverData.remaining,
+              status: serverData.remaining > 0 ? 'active' : 'exhausted',
+              lastUsed: serverData.lastUsed
+            };
+          }
+          return {
+            key: masked,
+            limit: -1,
+            remaining: -1,
+            status: 'unknown',
+            lastUsed: null
+          };
+        });
+        
+        setKeysStatus(frontendMap);
+      }
+    } catch (err) {
+      console.error("Failed to fetch keys status", err);
+    }
+  };
+
+  useEffect(() => {
+    if (showKeysStatus) {
+      fetchKeysStatus();
+    }
+  }, [showKeysStatus]);
+
   const POPULAR_ACCOUNTS = [
     'khaby.lame', 'charlidamelio', 'mrbeast', 'bellapoarch', 'addisonre', 
     'zachking', 'kimberly.loaiza', 'cznburak', 'therock', 'willsmith',

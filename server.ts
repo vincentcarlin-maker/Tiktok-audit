@@ -65,6 +65,7 @@ async function startServer() {
       
       let profileData: any = null;
       let source = 'ai-estimation';
+      let currentQuota: any = undefined;
 
       if (!isDemo && rapidApiKeys.length > 0) {
         // Try each key until one works or we run out
@@ -97,13 +98,31 @@ async function startServer() {
               });
 
               // Capture Quota Headers
-              const remainingVal = response.headers.get('x-ratelimit-requests-remaining');
-              const limitVal = response.headers.get('x-ratelimit-requests-limit');
+              const remainingVal = response.headers.get('x-ratelimit-requests-remaining') || 
+                                   response.headers.get('x-ratelimit-remaining') ||
+                                   response.headers.get('ratelimit-remaining');
+              const limitVal = response.headers.get('x-ratelimit-requests-limit') || 
+                               response.headers.get('x-ratelimit-limit') ||
+                               response.headers.get('ratelimit-limit');
+              
               if (remainingVal !== null) {
+                const limitNum = parseInt(limitVal || '0');
+                const remainingNum = parseInt(remainingVal);
                 keyStatusMap[currentKey] = {
-                  remaining: parseInt(remainingVal),
-                  limit: parseInt(limitVal || '0'),
+                  remaining: remainingNum,
+                  limit: limitNum,
                   lastUsed: Date.now()
+                };
+                currentQuota = {
+                  remaining: remainingNum,
+                  limit: limitNum,
+                  key: currentKey.substring(0, 4) + '...' + currentKey.substring(currentKey.length - 4)
+                };
+              } else {
+                currentQuota = {
+                  remaining: -1,
+                  limit: -1,
+                  key: currentKey.substring(0, 4) + '...' + currentKey.substring(currentKey.length - 4)
                 };
               }
 
@@ -365,7 +384,8 @@ async function startServer() {
       // Return the data
       res.json({
         data: profileData,
-        source
+        source,
+        quota: currentQuota
       });
 
     } catch (error: any) {
