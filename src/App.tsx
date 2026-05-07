@@ -535,9 +535,9 @@ export default function App() {
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setAppTab('search')}>
             <div className="bg-gradient-to-tr from-[#FE2C55] to-[#25F4EE] p-1.5 rounded-xl text-white shadow-sm shadow-red-100">
-              <TrendingUp size={20} />
+              <Zap size={20} />
             </div>
-            <span className="font-black text-xl tracking-tighter">TikTok<span className="text-[#FE2C55]">Audit</span></span>
+            <span className="font-black text-xl tracking-tighter">Viral<span className="text-[#FE2C55]">Scope</span></span>
           </div>
 
           <div className="flex items-center gap-4">
@@ -644,7 +644,7 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 mb-4"
             >
-              Analysez votre profil <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FE2C55] via-[#25F4EE] to-[#000000]">TikTok</span>
+              Dominez TikTok avec <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FE2C55] via-[#25F4EE] to-[#000000]">ViralScope</span>
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: -20 }}
