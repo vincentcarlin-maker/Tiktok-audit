@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
-import { Search, Loader2, TrendingUp, Users, Heart, Video, AlertCircle, Info, Download, ExternalLink, MessageCircle, Share2, Calendar, MapPin, Hash, Clock, Swords, Trash2, Activity, Star, Zap, Euro, Check, CheckCircle, X, AlertTriangle, Award, Eye, Lightbulb, PenTool, Megaphone, PlaySquare, RefreshCw, Sparkles } from 'lucide-react';
+import { Search, Loader2, TrendingUp, Users, Heart, Video, AlertCircle, Info, Download, ExternalLink, MessageCircle, Share2, Calendar, MapPin, Hash, Clock, Swords, Trash2, Activity, Star, Zap, Euro, Check, CheckCircle, X, AlertTriangle, Award, Eye, Lightbulb, PenTool, Megaphone, PlaySquare, RefreshCw, Sparkles, Printer } from 'lucide-react';
 
 import { motion, AnimatePresence } from 'motion/react';
 import { AnalysisResult } from './types';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import { analyzeTikTokProfile } from './services/tiktokService';
 import { getAIRecommendations, generateAIContentIdeas } from './services/aiService';
+import PrintReport from './components/PrintReport';
+import PrintMediaKit from './components/PrintMediaKit';
 
-function formatNumber(num: number | undefined | null): string {
+export function formatNumber(num: number | undefined | null): string {
   if (num === undefined || num === null) return '0';
   if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
   if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
@@ -81,6 +81,8 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [appTab, setAppTab] = useState<'search' | 'history'>('search');
+  const [isPrintMode, setIsPrintMode] = useState(false);
+  const [isPrintMediaKitMode, setIsPrintMediaKitMode] = useState(false);
   const [resultTab, setResultTab] = useState<'overview' | 'audit' | 'benchmark' | 'content' | 'insights'>('overview');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
@@ -89,8 +91,6 @@ export default function App() {
   const [sortBy, setSortBy] = useState<'recent' | 'views' | 'likes' | 'comments'>('recent');
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [isExportingPDF, setIsExportingPDF] = useState(false);
-  const [isExportingMediaKit, setIsExportingMediaKit] = useState(false);
   const [keysStatus, setKeysStatus] = useState<any[]>(() => {
     // Initialize with all keys masked
     const rawKeys = ((import.meta as any).env.VITE_RAPIDAPI_KEY) || 'b3b8244ea2msh4e2b733bb238abdp116a59jsn2bb022c66151';
@@ -272,147 +272,12 @@ export default function App() {
     }
   };
 
-  const handleDownload = (pdf: jsPDF, fileName: string) => {
-    try {
-      // In many environments (iframe, mobile), pdf.save() is unreliable
-      const blob = pdf.output('blob');
-      const url = URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      
-      // Keep in DOM long enough for click to register
-      setTimeout(() => {
-        document.body.removeChild(link);
-      }, 100);
-      
-      // Fallback for strict browsers/iframes
-      setTimeout(() => {
-        if (window.confirm("Le téléchargement n'a pas démarré ? Cliquez OK pour ouvrir le document dans un nouvel onglet.")) {
-          window.open(url, '_blank');
-        }
-        // Clean up URL object
-        setTimeout(() => URL.revokeObjectURL(url), 120000);
-      }, 2000);
-    } catch (e) {
-      console.error("Download failed, trying save():", e);
-      pdf.save(fileName);
-    }
-  };
-
-  const exportMediaKit = async () => {
-    const element = document.getElementById('media-kit-container');
-    if (!result || !element) return;
-    
-    setIsExportingMediaKit(true);
-    try {
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        proxy: '/api/proxy-image',
-        backgroundColor: '#ffffff',
-        logging: true,
-        width: 800,
-        windowWidth: 800,
-        onclone: (clonedDoc) => {
-          normalizeOklch(clonedDoc);
-          const container = clonedDoc.getElementById('media-kit-container');
-          if (container) {
-            container.style.position = 'relative';
-            container.style.left = '0';
-            container.style.top = '0';
-            container.style.opacity = '1';
-            container.style.display = 'block';
-            container.style.width = '800px';
-            container.style.margin = '0';
-            container.style.padding = '48px';
-          }
-        }
-      });
-      
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgWidth = 210;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
-      const fileName = `MediaKit_${result.data.username}.pdf`;
-      handleDownload(pdf, fileName);
-    } catch (error) {
-      console.error("Error generating Media Kit:", error);
-      alert("Une erreur est survenue lors de la génération du Media Kit. Certains visuels (images) peuvent bloquer l'export.");
-    } finally {
-      setIsExportingMediaKit(false);
-    }
+  const handleDownload = (blobUrl: string, fileName: string) => {
+    // Deprecated
   };
 
   const exportPDF = async () => {
-    const element = document.getElementById('analytics-dashboard');
-    if (!result) return;
-    
-    if (!element) {
-      if (loading) {
-        alert("L'analyse est encore en cours. Veuillez patienter.");
-      } else {
-        alert("Impossible de localiser les données de l'audit. Veuillez relancer une recherche.");
-      }
-      return;
-    }
-    
-    setIsExportingPDF(true);
-    try {
-      const captureWidth = 1200; 
-      const canvas = await html2canvas(element, { 
-        scale: 1.5,
-        useCORS: true, 
-        proxy: '/api/proxy-image',
-        backgroundColor: '#f8fafc',
-        logging: true,
-        width: captureWidth,
-        windowWidth: captureWidth,
-        onclone: (clonedDoc) => {
-          normalizeOklch(clonedDoc);
-          const dashboard = clonedDoc.getElementById('analytics-dashboard');
-          if (dashboard) {
-            dashboard.style.width = `${captureWidth}px`;
-            dashboard.style.maxWidth = 'none';
-            dashboard.style.margin = '0';
-          }
-        }
-      });
-      const imgData = canvas.toDataURL('image/jpeg', 0.9);
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      const fileName = `audit_${result.data.profile.nickname || 'tiktok'}_${new Date().toISOString().split('T')[0]}.pdf`;
-      handleDownload(pdf, fileName);
-    } catch (err) {
-      console.error('Error generating PDF', err);
-      alert("Erreur lors de la génération du PDF. Les images ou la complexité du dashboard peuvent ralentir l'export.");
-    } finally {
-      setIsExportingPDF(false);
-    }
+    // Deprecated for print mode
   };
 
   const sortedVideos = result?.data?.videos ? [...result.data.videos].sort((a, b) => {
@@ -572,6 +437,14 @@ export default function App() {
     }
   };
 
+  if (isPrintMode && result) {
+    return <PrintReport result={result} onClose={() => setIsPrintMode(false)} />;
+  }
+
+  if (isPrintMediaKitMode && result) {
+    return <PrintMediaKit result={result} onClose={() => setIsPrintMediaKitMode(false)} />;
+  }
+
   return (
     <div className="relative isolate min-h-screen bg-slate-50 font-sans text-slate-900">
       {/* Top Navigation */}
@@ -643,33 +516,30 @@ export default function App() {
               {result && !loading && (
                 <>
                   <button 
-                   onClick={exportMediaKit}
-                  disabled={isExportingMediaKit}
-                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 shadow-sm"
+                   onClick={() => setIsPrintMediaKitMode(true)}
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-700 transition-all shadow-sm"
                   title="Media Kit"
                 >
-                  {isExportingMediaKit ? <Loader2 size={14} className="animate-spin" /> : <Star size={14} />}
+                  <Star size={14} />
                   <span className="hidden sm:inline">Media Kit</span>
                 </button>
                  <button 
-                   onClick={exportPDF}
-                   disabled={isExportingPDF}
-                   className="flex sm:hidden p-2 bg-slate-900 text-white rounded-xl shadow-lg shadow-slate-200 active:scale-95 transition-all disabled:opacity-50"
-                   title="Télécharger PDF"
+                   onClick={() => setIsPrintMode(true)}
+                   className="flex sm:hidden p-2 bg-slate-900 text-white rounded-xl shadow-lg shadow-slate-200 active:scale-95 transition-all"
+                   title="Imprimer / PDF"
                  >
-                   {isExportingPDF ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
+                   <Printer size={18} />
                  </button>
                </>
              )}
              <div className="hidden sm:flex items-center gap-3">
                 {result && !loading && (
                   <button 
-                    onClick={exportPDF}
-                    disabled={isExportingPDF}
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all disabled:opacity-50 shadow-sm"
+                    onClick={() => setIsPrintMode(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all shadow-sm"
                   >
-                    {isExportingPDF ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-                    Audit PDF
+                    <Printer size={14} />
+                    Imprimer / PDF
                   </button>
                 )}
                 <div className="w-8 h-8 rounded-full bg-slate-200 animate-pulse"></div>
@@ -905,12 +775,11 @@ export default function App() {
                     CSV
                   </button>
                   <button 
-                    onClick={exportPDF}
-                    disabled={isExportingPDF}
-                    className="px-6 py-3 bg-slate-900 text-white font-bold rounded-[24px] hover:bg-slate-800 transition-colors flex items-center gap-2 disabled:opacity-50"
+                    onClick={() => setIsPrintMode(true)}
+                    className="px-6 py-3 bg-slate-900 text-white font-bold rounded-[24px] hover:bg-slate-800 transition-colors flex items-center gap-2"
                   >
-                    {isExportingPDF ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
-                    {isExportingPDF ? 'Exporting...' : 'PDF'}
+                    <Printer size={18} />
+                    Imprimer / PDF
                   </button>
                 </div>
               </div>
